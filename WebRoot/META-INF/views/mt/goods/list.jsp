@@ -10,7 +10,7 @@
        <input id="sellerId" style="display: none;" value="<%= currentUser != null ? currentUser.getSellerId() : null%>"/>
 		<div class=" admin-content">     
 			<div class="am-panel am-panel-default">
-			  <div class="am-panel-hd" style="height: 40px;">商品列表<button class="btn btn-primary btn-app btn-xs pull-right" style="margin-top: -5px;" data-toggle="modal" onclick="doAddGoods();">上架商品</button></div>
+			  <div class="am-panel-hd" style="height: 40px;">员工档案<button class="btn btn-primary btn-app btn-xs pull-right" style="margin-top: -5px;" data-toggle="modal" onclick="doAddGoods();">添加档案</button></div>
 			  <div class="am-panel-bd">
 			  	<form class="form-horizontal" role="form">
                     <fieldset>
@@ -43,25 +43,24 @@
 		            <thead >
 		              <tr class="am-default" id="goods-table-head">
 		                <th class="id" style="display: none">编号</th>
-		                <th class="sellerId" style="display: none">商家编号</th>
-		                <th class="secondLevelCategory" style="display: none">二级分类编号</th>
-		                <th class="secondLevelCategoryName">分类</th>
-		                <th class="name">名称</th>
-		                <th class="description" style="width: 150px;">描述</th>
-		                <th class="status" style="display: none">状态</th>
-		                <th class="vender">厂家</th>
-		                <th class="address">产地</th>
-		                <th class="clickCount">点击量</th>
-		                <th class="rate">折扣率(/折)</th>
-		                <th class="postage">邮费</th>
-		                <th class="cashback">返现金额</th>
+		                <th class="category" style="display: none">二级分类编号</th>
+		                <th class="catName">部门</th>
+		                <th class="name">姓名</th>
+		                <th class="logoAttUrl">照片</th>
+		                <th class="birthday">出生日期</th>
+		                <th class="nation">民族</th>
+		                <th class="politics">政治面貌</th>
+		                <th class="hobby">爱好</th>
+		                <th class="description" style="width: 150px;">备注</th>
+		           
+		            <!--     <th class="cashback">返现金额</th>
 		                <th class="status">在售<i class="am-icon-check am-text-warning"></i> /下架 <i class="am-icon-close am-text-primary"></i></th>
 		                <th class="creator" style="display: none">上架人</th>
 		                <th class="createTime"  style="display: none">上架时间</th>
 		                <th class="updator" style="display: none">修改人</th>
 		                <th class="udpateTime"  style="display: none">修改日期</th>
 		                <th class="undercarriageor" style="display: none">下架人</th>
-		                <th class="undercarriageTime"  style="display: none">下架时间</th>
+		                <th class="undercarriageTime"  style="display: none">下架时间</th> -->
 		                <th width="163px">操作</th>
 		              </tr>
 		            </thead>
@@ -166,21 +165,6 @@ function loadData(page){
 	
 	var params = {page: page, rows: 10};
 	
-	if($("#goodsName").val()){
-		params.name = $("#goodsName").val();
-	}
-	
-	if($("#secondLevelCategory").val()){
-		params.secondLevelCategory = $("#secondLevelCategory").val();
-	}
-	
-	if($("#goodsStatus").val()){
-		params.status = $("#goodsStatus").val();
-	}
-	if($("#sellerId").val() != 0){
-		params.sellerId = $("#sellerId").val();
-	}
-	
 	$.post("mt/mtGoods/listNormalGoods", params, function(r){				
 		if(r.success){
 			if(r.data){
@@ -212,21 +196,16 @@ function createGoodsList(d){
 	 	$.each($("#goods-table-head").children(), function(){
 	 		if($(this).attr("class") != null){
 		 		var td = "<td style='" + ($(this).attr("style") != null ? $(this).attr("style") : "") + "' class='" + $(this).attr("class") + "'>"
-		 		if("status" == $(this).attr("class")){
-		 			td += item["status"] == 0 ? '<i class="am-icon-check am-text-warning"></i>' : '<i class="am-icon-close am-text-primary"></i>';
-		 		} else if("rate" == $(this).attr("class")){
-		 			td += (item["rate"] == 0 || item["rate"] == 1 ? '无折扣' : item["rate"] * 10 + '折');
-		 		} else if("postage" == $(this).attr("class")){
-		 			td += (item["postage"] == 0 ? '包邮' : item["postage"] );
+		 		if("logoAttUrl" == $(this).attr("class")){
+		 			td += item["logoAttUrl"] ? ("<img src='showImage?uuid=" + item["logoAttUrl"] + "' style='width:71px;height:99px;'/>") : "";
 		 		} else {
-			 		td += (item[$(this).attr("class")] != null ? item[$(this).attr("class")] : "");
+		 			td += (item[$(this).attr("class")] != null ? (item[$(this).attr("class")].length>40 ? item[$(this).attr("class")].substring(0,40)+"...": item[$(this).attr("class")]) : "");
 		 		}
 		 		td += "</td>";
 		 		tr += td;
 	 		}
 	 	});
 	 	tr += '<td><div class="am-btn-group am-btn-group-xs">';
-	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-success am-round"  title="商品置顶"  onclick="doUpGoods($(this));"><span class="am-icon-level-up"></span> </button>';
 	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="修改商品" onclick="doEditGoods($(this));"><span class="am-icon-pencil-square-o"></span></button>';
 	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-danger am-round" title="下架" onclick="doUndercarriage($(this));"><span class="am-icon-trash-o" ></span></button>';
 	 	tr += '</div></td>';
@@ -248,7 +227,7 @@ function checkGoodById(id){
  var i = 0;
 function doAddGoods(){
 	$("#dialog").modal('show');
-	$("#dialogLabel").html('上架商品');
+	$("#dialogLabel").html('员工档案');
 	EditorFactory.getInstance();
 }
 

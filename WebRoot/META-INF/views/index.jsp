@@ -5,7 +5,7 @@
 	<head>
 	  <%@ include file="common.jsp"%>
 		<meta charset="utf-8" />
-		<title>${projectName } - 后台管理</title>
+		<title>${projectName } - 人力资源管理系统</title>
         <style type="text/css">
         	iframe {
 				height: 800px;
@@ -30,7 +30,7 @@
 					<a href="#" class="navbar-brand">
 						<small>
 							<i class="icon-leaf"></i>
-							${projectName }后台管理系统
+							${projectName }人力资源管理系统
 						</small>
 					</a><!-- /.brand -->
 				</div><!-- /.navbar-header -->

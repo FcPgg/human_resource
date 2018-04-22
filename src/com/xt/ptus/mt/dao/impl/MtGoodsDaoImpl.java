@@ -1,0 +1,171 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.ProjectionList;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.controller.params.MtOrderGoodsParam;
+import com.xt.ptus.mt.dao.MtGoodsDao;
+import com.xt.ptus.mt.dao.MtGoodsSpecDao;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtGoodsSpec;
+import com.xt.ptus.mt.entity.MtRecommendsData;
+import com.xt.ptus.mt.entity.MtUserAttention;
+import com.xt.ptus.mt.pojo.MtGoodsPojo;
+import com.xt.ptus.obejcts.Pagination;
+
+@Repository
+public class MtGoodsDaoImpl extends BaseDaoImpl<MtGoods> implements MtGoodsDao {
+
+	@Autowired
+	private MtGoodsSpecDao specDao;
+	
+	@Override
+	public Pagination<MtGoods> getGoodsBySellerId(String sellerId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtGoods.class);
+		dc.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		dc.add(Property.forName("status").eq(Constants.GOODS_STATUS_NORMAL));
+		Pagination<MtGoods> pagination = this.findByPagination(dc, page, rows, Order.desc("createTime"));
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtGoods good : pagination.getData()){
+				Map<String, Double> prices = specDao.getGoodsPrice(good.getId());
+				good.setMaxPrice(prices.get("maxPrice"));
+				good.setMinPrice(prices.get("minPrice"));
+			}
+		}
+		
+		return pagination;
+	}
+
+	@Override
+	public int getGoodsCountBySellerId(String sellerId) {
+		// TODO 自动生成的方法存根
+		Criteria criteria = getCurrentSession().createCriteria(MtGoods.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		criteria.add(Property.forName("status").eq(Constants.GOODS_STATUS_NORMAL));
+		
+		criteria.setProjection(Projections.rowCount());
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	@Override
+	public List<MtGoodsPojo> getGoodsByIds(MtOrderGoodsParam[] params) {
+		List<MtGoodsPojo> result = new ArrayList<MtGoodsPojo>();
+		
+		if(params != null && params.length > 0){
+			String[] ids = new String[params.length];
+			for(int i = 0; i < params.length; i++){
+				ids[i] = (params[i]).getGoodsId();
+			}
+			
+			List<MtGoods> goods = getCurrentSession().createCriteria(MtGoods.class).add(Property.forName("id").in(ids)).add(Property.forName("status").eq(Constants.GOODS_STATUS_NORMAL)).list();
+			
+			if(goods != null && goods.size() > 0){
+				for(MtOrderGoodsParam param : params){
+					for(MtGoods good : goods){
+						if(param.getGoodsId().equals(good.getId())){
+
+							MtGoodsPojo pojo = new MtGoodsPojo();
+							
+							result.add(pojo);
+						}
+					}
+				}
+			}
+		}
+		return result;
+	}
+	
+
+	@Override
+	public List<MtGoods> getUserAttendGoods(String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtGoods.class);
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserAttention.class);
+		dc.add(Property.forName("category").eq(Constants.USER_ATTENTION_CATEGORY_GOODS));
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		dc.setProjection(Property.forName("attentionId"));
+		criteria.add(Property.forName("id").in(dc));
+		List<MtGoods> list = criteria.list();
+		return list;
+	}
+
+	/**
+	 * 获取商品列表
+	 */
+	@Override
+	public List<MtGoods> getGoodsList(int page, int rows, Map<String, Object> params) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtGoods.class);
+		
+		if(params.containsKey("name"))
+			dc.add(Property.forName("name").like("%" + params.get("name") + "%"));
+		
+		if(params.containsKey("sellerId"))
+			dc.add(Property.forName("sellerId").eq(Integer.parseInt(params.get("sellerId").toString())));
+		
+		Pagination<MtGoods> pagination = this.findByPagination(dc, page, rows, "id");
+		
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtGoods good : pagination.getData()){
+				Map<String, Double> prices = specDao.getGoodsPrice(good.getId());
+				good.setMaxPrice(prices.get("maxPrice"));
+				good.setMinPrice(prices.get("minPrice"));
+			}
+		}
+		return pagination.getData();
+	}
+
+	@Override
+	public Pagination<MtGoods> getRecommendGoods(int page, int rows) {
+		DetachedCriteria dcRecommends = DetachedCriteria.forClass(MtRecommendsData.class);
+		dcRecommends.setProjection(Projections.property("goodsId"));
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtGoods.class);
+		dc.add(Property.forName("id").in(dcRecommends));
+		Pagination<MtGoods> pagination = this.findByPagination(dc, page, rows, "id");
+		
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtGoods good : pagination.getData()){
+				Map<String, Double> prices = specDao.getGoodsPrice(good.getId());
+				good.setMaxPrice(prices.get("maxPrice"));
+				good.setMinPrice(prices.get("minPrice"));
+			}
+		}
+		return pagination;
+	}
+
+	@Override 
+	public List<MtGoods> getGoodsName(String name) {
+		Criteria criteria = getCurrentSession().createCriteria(MtGoods.class, "goods");
+		
+		ProjectionList projectionList = Projections.projectionList();  
+		projectionList.add(Projections.property("goods.id").as("id"));  
+		projectionList.add(Projections.property("goods.name").as("name"));  
+		
+		criteria.setProjection(projectionList);
+		criteria.setResultTransformer(Transformers.aliasToBean(MtGoods.class));
+		criteria.add(Property.forName("name").like("%" + name + "%"));
+		return criteria.list();
+	}
+
+	@Override
+	public List<MtGoods> getGoodsBySellerId(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtGoods.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		criteria.add(Property.forName("status").eq(Constants.GOODS_STATUS_NORMAL));
+		return criteria.list();
+	}
+}

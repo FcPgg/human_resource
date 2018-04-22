@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="static/assets/css/bootstrap-slider.min.css"/>
 
 <script type="text/javascript" src="static/assets/wangEditor-3.0.8/release/wangEditor.js"></script>
-
+<script src="static/assets/laydate/laydate.js"></script>
 <style type='text/css'>
         /* Example 1 custom styles */
         #ex1Slider .slider-selection {
@@ -40,7 +40,7 @@
     </style>
 
 <div class="modal fade" id="dialog" tabindex="-1" role="dialog" aria-labelledby="dialogLabel" aria-hidden="true">
-	<div class="modal-dialog " style="width:1500px;">
+	<div class="modal-dialog " style="width:900px;">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
@@ -52,10 +52,7 @@
 			<div class="modal-body">				
 				<ul class="nav nav-tabs" role="tablist">
                     <li class="active"><a href="#basicInfo" role="tab" data-toggle="tab">基本信息</a></li>
-                    <li><a href="#goodsGalleryInfo" role="tab" data-toggle="tab">商品相册</a></li>
-                    <li><a href="#goodsSpecsInfo" role="tab" data-toggle="tab">规格设置</a></li>
-                    <li><a href="#goodsParamsInfo" role="tab" data-toggle="tab">产品参数</a></li>
-                    <li><a href="#goodsDetailInfo" role="tab" data-toggle="tab">图文详情</a></li>
+                    <li><a href="#jobInfo" role="tab" data-toggle="tab">工作简历</a></li>
                 </ul>
                 <div class="tab-content" >
                     <div role="tabpanel" class="tab-pane active" id="basicInfo">
@@ -65,208 +62,80 @@
                     	  <input class="data-id" id="data-id" style="display: none;"/>
                     		
 						  <div class="form-group">
-						    <label for="firstname" class="col-sm-1 control-label">名称</label>
+						    <label for="firstname" class="col-sm-1 control-label">姓名</label>
 						    <div class="col-sm-11">
 						      <input type="text" class="form-control" name="name" id="name" placeholder="请输入名称" required>
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">分类</label>
+								<label class="col-sm-1 control-label" >图片</label>
+								<div class="col-sm-11">
+									<iframe style="width: 100%; height: 40px;" src="file-upload/page" name="file-upload-iframe"></iframe>
+									<div id="imageDiv"></div>
+									<input name="logoAttId" id="logoAttId" style="display: none;" value=""/>
+									<input name="logoAttUrl" id="logoAttUrl" style="display: none;" value=""/>
+								</div>
+						  </div>
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-1 control-label">部门</label>
 						    <div class="col-sm-11">
 						      <select id="category" name='category' class="form-control" style="height: 38px;"></select>
 						    </div>
 						  </div>
 						  
 				  	     <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">厂家</label>
+							<label for="lastname" class="col-sm-1 control-label">出生日期</label>
+							<div class="col-sm-11">
+								<input type="text" class="demo-input" placeholder="请选择日期"
+									id="birthday">
+							</div>
+						 </div>
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-1 control-label">民族</label>
 						    <div class="col-sm-11">
-						       <input type="text" class="form-control" id="vender" name='vender' placeholder="请输入厂家">
+						       <input type="text" class="form-control" id="nation" placeholder="请输入民族">
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">产地</label>
+						    <label for="lastname" class="col-sm-1 control-label">政治面貌</label>
 						    <div class="col-sm-11">
-						       <input type="text" class="form-control" id="address" placeholder="请输入产地">
+						       <input type="text" class="form-control" id="politics" placeholder="请输入政治面貌">
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">邮费</label>
-						    <div class="col-sm-9">
-						       <input type="text" class="form-control" id="postage" placeholder="请输入邮费">
-						    </div>
-						     <div class="col-sm-2">
-						     	<label class="am-checkbox am-secondary" onclick="doPostage()">
-		                         <input type="checkbox" value="" id="ifPostage" >是否包邮 </label>
-						     </div>
-						  </div>
-						  
-						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">折扣率</label>
-						    <div class="col-sm-3 ">
-						       <input id="rate" style="height: 34px;" class="form-control" data-slider-id='ex1Slider' type="text" data-slider-min="0" data-slider-max="1" data-slider-step="0.01" data-slider-value="0"/>
-						    </div>
-						    <div class="col-sm-8">
-						    	<p class="red">注：折扣率最小为0,最大为1,(0 或者 1都为不打折) </br>即：计算价格公式： 最终价格=价格*折扣率 (最终价格85元= 原价100元 * 折扣率0.85)</p>
+						    <label for="lastname" class="col-sm-1 control-label">爱好</label>
+						    <div class="col-sm-11 ">
+						       <input id="hobby" type="text" style="height: 34px;" class="form-control" placeholder="请输入爱好"/>
 						    </div>
 						  </div>
 						  
 					      <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">返现金额</label>
-						    <div class="col-sm-3 ">
-						       <input id="cashback" style="height: 34px;" class="form-control" placeholder="请输入返现金额"/>
-						    </div>
-						    <div class="col-sm-8">
-						    	<p class="red">注：若无返现则填写0</p>
+						    <label for="lastname" class="col-sm-1 control-label">学历</label>
+						    <div class="col-sm-11 ">
+						       <input id="education" style="height: 34px;" class="form-control" placeholder="请输入学历"/>
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
 						    <label for="lastname" class="col-sm-1 control-label">备注</label>
-						    <div class="col-sm-11">
-						       <input type="text" class="form-control" id="remark" placeholder="请输入备注">
-						    </div>
-						  </div>
-						  
-						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">描述</label>
-						    <div class="col-sm-11">
+						     <div class="col-sm-11">
 						       <textarea class="form-control" rows="2" id="description" ></textarea>
 						    </div>
 						  </div>
 						  
-						  <div style="display: none;">
-						  	<input type="text" id="clickCount" value="0"/>
-						  	<input type="text" id="createTime" value="0"/>
-						  	<input type="text" id="creator" value="0"/>
-						  	<input type="text" id="sellerId" />
-						  	<input type="text" id="status" value="0"/>
-						  	<input type="text" id="updateTime" value="0"/>
-						  	<input type="text" id="undercarriageTime" value="0"/>
-						  	<input type="text" id="undercarriagor" value="0"/>
-						  	<input type="text" id="updator" value="0"/>
-						  </div>
+						  
 						</form>
                     </div> <!-- end of basicInfo -->
                     
-                    <div role="tabpanel" class="tab-pane" id="goodsGalleryInfo" style="height: 200px;"> 
-                    	<div class="col-xs-12">
-								<!-- PAGE CONTENT BEGINS -->
-
-								<div class="row-fluid">
-									<ul class="ace-thumbnails" id="ulGoodsGallery">
-										<li data-id="" goodsId="">
-											<div>
-												<img alt="首页图" class="logo" resourceId="" style="height: 150px; width: 150px;" src="">
-												<div class="text">
-													<div class="inner">
-														<a href="javascript:void(0);" data-rel="colorbox" class="cboxElement" onclick="doChooseResource($(this));">
-															<i class="icon-zoom-in"></i>
-														</a>
-													</div>
-												</div>
-												<div style="text-align: center;">首页图</div>
-											</div>
-										</li>
-										<li data-id="" goodsId="">
-											<div>
-												<img alt="第二页" class="logo" resourceId="" style="height: 150px; width: 150px;" src="">
-												<div class="text">
-													<div class="inner">
-														<a href="javascript:void(0);" data-rel="colorbox" class="cboxElement" onclick="doChooseResource($(this));">
-															<i class="icon-zoom-in"></i>
-														</a>
-													</div>
-												</div>
-												<div style="text-align: center;">第二页</div>
-											</div>
-										</li>
-										<li data-id="" goodsId="">
-											<div>
-												<img alt="第三页" class="logo" resourceId="" style="height: 150px; width: 150px;" src="">
-												<div class="text">
-													<div class="inner">
-														<a href="javascript:void(0);" data-rel="colorbox" class="cboxElement" onclick="doChooseResource($(this));">
-															<i class="icon-zoom-in"></i>
-														</a>
-													</div>
-												</div>
-												<div style="text-align: center;">第三页</div>
-											</div>
-										</li>
-										<li data-id="" goodsId="">
-											<div>
-												<img alt="第四页" class="logo" resourceId="" style="height: 150px; width: 150px;" src="">
-												<div class="text">
-													<div class="inner">
-														<a href="javascript:void(0);" data-rel="colorbox" class="cboxElement" onclick="doChooseResource($(this));">
-															<i class="icon-zoom-in"></i>
-														</a>
-													</div>
-												</div>
-												<div style="text-align: center;">第四页</div>
-											</div>
-										</li>
-										<li data-id="" goodsId="">
-											<div>
-												<img alt="第五页" class="logo" resourceId="" style="height: 150px; width: 150px;" src="">
-												<div class="text">
-													<div class="inner">
-														<a href="javascript:void(0);" data-rel="colorbox" class="cboxElement" onclick="doChooseResource($(this));">
-															<i class="icon-zoom-in"></i>
-														</a>
-													</div>
-												</div>
-												<div style="text-align: center;">第五页</div>
-											</div>
-										</li>
-									</ul>
-								</div><!-- PAGE CONTENT ENDS -->
-							</div> <!-- 商品相册 -->
-						 </div>
-						 
-						<!-- start of goods specs info -->
-						 <div role="tabpanel" class="tab-pane" id="goodsSpecsInfo"> 
-							<table class="table table-bordered" id="spacesTable">
-				            <thead >
-				              <tr class="am-success" id="goods-table-head">
-				                <th width="163px"><a href="javascript:void(0);" onclick="addSpaces()">[+]</a></th>
-				                <th class="id" style="display: none">编号</th>
-				                <th class="goodsId" style="display: none">商品编号</th>
-				                <th class="description">名称</th>
-				                <th class="price">价格</th>
-				                <th class="Inventory">库存</th>
-				                <th class="warnNumber">报警数量</th>
-				                <th class="logo">展示图</th>
-				              </tr>
-				            </thead>
-				            <tbody>
-				            </tbody>
-					          </table>
-	                    </div> <!-- enf of goodsSpecsInfo -->
-		                    
-						<!-- #goodsParamsInfo -->
-						<div role="tabpanel" class="tab-pane" id="goodsParamsInfo">
-							<table class="table table-bordered" id="paramsTable">
-				            <thead >
-				              <tr class="am-success" id="goods-table-head">
-				                <th width="163px"><a href="javascript:void(0);" onclick="addParams();">[+]</a></th>
-				                <th class="id" style="display: none">编号</th>
-				                <th class="goodsId" style="display: none">商品编号</th>
-				                <th class="paramsName">名称</th>
-				                <th class="paramsValue">描述</th>
-				              </tr>
-				            </thead>
-				            <tbody>
-				            </tbody>
-					          </table>
-						</div>
 						<!-- #goodsParamsInfo -->
 						
 						<!-- #goodsDetailInfo -->
-						<div role="tabpanel" class="tab-pane" id="goodsDetailInfo">
+						<div role="tabpanel" class="tab-pane" id="jobInfo">
 							<div id="titleDiv" class="toolbar"></div>
 							<div id="contentDiv" class="text">
 							</div>
@@ -368,17 +237,65 @@
 	</div><!-- /.modal -->
 </div>
 
-<jsp:include page="../material_resources/choose_resources.jsp"></jsp:include>
+<%-- <jsp:include page="../material_resources/choose_resources.jsp"></jsp:include> --%>
 
 <script type="text/javascript">
+$(function() {
+	if($("#logoAttId").val()){
+		$("#imageDiv").children().remove();
+		$("#imageDiv").append("<img style='width:120px;height:120px;' src='showImage?uuid=" + $("#logoAttUrl").val() + "&fileType=jpg'><img>");
+	}
+	
+	lay('#version').html('-v'+ laydate.v);
+
+	//执行一个laydate实例
+	laydate.render({
+		  elem: '#birthday', //指定元素
+		  theme: '#FF5722',
+		  max: 0,
+		  format: 'yyyy年MM月dd日'
+		});
+	$("#rate").slider({
+    	tooltip: 'always'
+    });
+});
+	
+   
+   
+	
+function iframeCallBack(atts) {
+	if (atts != null) {
+		$("#imageDiv").children().remove();
+		$("#imageDiv").append("<img style='width:120px;height:120px;' src='showImage?uuid=" + atts[0].uuid + "&fileType=" + atts[0].srcFileType + "'><img>");
+		$("#logoAttId").val(atts[0].id);
+	}
+}	
+
+
 	$(function() {
-		$.post("mt/mtSecondLevelCategory/getCategoryBySellerId", {"sellerId":$("#sellerId").val()}, function(r) {
+	/* 	$.post("mt/mtSecondLevelCategory/getCategoryBySellerId", {"sellerId":$("#sellerId").val()}, function(r) {
 			if (r.success) {
 				if (r.data) {
 					$("#category").children().remove();
 					$.each(r.data, function() {
 						var option = '<option value="' + this.id + '"'
 						 option += '>' + this.categoryName + '</option>'
+						$("#category").append(option);
+						$(".category").append(option);
+					});
+				}
+			}
+		});
+		$("#rate").slider({
+        	tooltip: 'always'
+	    }); */
+		$.post("mt/mtCategory/listNormalSystemCategory","",function(r){
+			if (r.success) {
+				if (r.data) {
+					$("#category").children().remove();
+					$.each(r.data.data, function() {
+						var option = '<option value="' + this.id + '"'
+						    option += '>' + this.catName + '</option>'
 						$("#category").append(option);
 						$(".category").append(option);
 					});
@@ -398,45 +315,6 @@
 		}
 		$('<div class="alert"> <button type="button" class="close" data-dismiss="alert">&times;</button>'+ 
 		 '<strong>File upload error</strong> '+msg+' </div>').prependTo('#alerts');
-	}
-	
-	//添加规格
-	function addSpaces(){
-		var row = "<tr>"
-           row += '<td><a href="javascript:void(0);" onclick="removeSpaces($(this))">[-]删除 </a></div></td>';
-		row += '<td style="display: none"><input class="id" value="0"/></td>';
-           row += '<td style="display: none"><input class="goodsId" value="0"/></td>';
-           row += '<td><input class="description"/></td>';
-           row += '<td><input class="price"/></td>';
-           row += '<td><input class="inventory"/></td>';
-           row += '<td><input class="warnNumber"/></td>';
-           row += '<td ><img class="logo" style="width:70px;height:70px;" src=""/><a class="btn btn-link openResourcesDialog" href="javascript:void(0);">选择展示图</a></td>';
-		row += "</tr>";
-		row = $(row).appendTo($("#spacesTable tbody"));
-		
-		$(".openResourcesDialog").off("click");
-		$(".openResourcesDialog").on("click", $(".openResourcesDialog:last"), function (){
-			
-			var td = $(this).parent();
-			
-			$('#chooseResourcesDialog').modal();
-			
-			$("#btnChooseResources").off("click");
-			
-			$("#btnChooseResources").on("click", function(){
-				$.each($(".check-resources"), function(){
-					if($(this).is(":checked")){
-						var resourceId = $(this).parent().parent().attr("data-id");
-						var accessUrl = $(this).parent().parent().attr("access-url");
-						
-						td.find(".logo").attr("src", accessUrl);
-						td.find(".logo").attr("resourceId", resourceId);
-						
-						$('#chooseResourcesDialog').modal("hide");
-					}
-				});
-			});
-		});
 	}
 	
 	//是否包邮操作
@@ -480,107 +358,29 @@
 		}
 	}
 
-	//删除规格
-	function removeSpaces(e) {
-		var tr = e.parent().parent();
-		if($(tr).find(".id").val() > 0){
-			if(confirm("确定删除这条规格数据吗？此操作不可恢复！")){
-				$.post("mt/mtGoodsSpec/remove", {id: tr.find(".id").val()}, function(r){
-					if(r.success){
-						tr.remove();
-					} else {
-						console.log(r.error);
-						alert(r.message);
-					}
-				});
-			}
-		} else {
-			tr.remove();
-		}
-	}
 	
-	//选择资源文件
-	function doChooseResource(e){
-		var parent = e.parent().parent().parent();
-		
-		$("#btnChooseResources").off("click");
-		
-		$("#btnChooseResources").on("click", function(){
-			$.each($(".check-resources"), function(){
-				if($(this).is(":checked")){
-					var resourceId = $(this).parent().parent().attr("data-id");
-					var accessUrl = $(this).parent().parent().attr("access-url");
-					
-					parent.find(".logo").attr("src", accessUrl);
-					parent.find(".logo").attr("resourceId", resourceId);
-					
-					$('#chooseResourcesDialog').modal("hide");
-				}
-			});
-		});
-		
-		$('#chooseResourcesDialog').modal();
-	}
 
 	//保存商品
 	function doSaveGoods(){
 		var entity = {
 				id: $("#data-id").val(),
 				name: $("#name").val(),
-				secondLevelCategory: $("#category").val(),
-				vender: $("#vender").val(),
-				address: $("#address").val(),
+				categroy: $("#category").val(),
+				attId: $("#logoAttId").val(),
+				birthday: $("#birthday").val(),
 				description: $("#description").val(),
-				rate: parseInt($("#rate").val()),
-				postage: $("#postage").val(),
+				nation: $("#nation").val(),
+				politics: $("#politics").val(),
 				detailDescription: editor.txt.html(),
-				clickCount : $("#clickCount").val(),
+				hobby : $("#hobby").val(),
 				creator : $("#creator").val(),
-				sellerId : $("#sellerId").val(),
 				status : $("#status").val(),
 				undercarriagor : $("#undercarriagor").val(),
 				updator : $("#updator").val(),
 				cashback : $("#cashback").val() != null ? $("#cashback").val() : 0 
 		};
 		
-		entity.goodsSpecs = [];
 		
-		$.each($("#spacesTable tbody").children(), function(){
-			var spec = {
-				id: $(this).find(".id").val(),
-				goodsId: $(this).find(".goodsId").val(),
-				description: $(this).find(".description").val(),
-				price: $(this).find(".price").val(),
-				inventory: $(this).find(".inventory").val(),
-				warnNumber: $(this).find(".warnNumber").val(),
-				resourceId: $(this).find(".logo").attr("resourceId")
-			}
-			entity.goodsSpecs.push(spec);
-		});
-		
-		entity.goodsParams = [];
-		$.each($("#paramsTable tbody").children(), function(){
-			var param = {
-				id: $(this).find(".id").val(),
-				goodsId: $(this).find(".goodsId").val(),
-				paramName: $(this).find(".paramName").val(),
-				paramValue: $(this).find(".paramValue").val()
-			}
-			entity.goodsParams.push(param);
-		});
-		
-		entity.goodsGallery = [];
-		$.each($("#ulGoodsGallery li"), function(){
-			if($(this).find(".logo").attr("resourceId") != null && $(this).find(".logo").attr("resourceId") > 0){
-				var galler = {
-						id: $(this).attr("data-id") <= 0 ? null : $(this).attr("data-id"),
-						goodsId: $(this).attr("goodsId") <= 0 ? null : $(this).attr("goodsId"),
-						resourceId: $(this).find(".logo").attr("resourceId"),
-						sort: $(this).index()
-				}
-				entity.goodsGallery.push(galler);
-			}
-		});
 		if(entity.name == null && entity.name == ""){
 			alert("请填写商品名称");
 			return;
@@ -593,23 +393,16 @@
 			alert("请填写生产厂家");
 			return;
 		}
-		var x = entity.rate;
+		/* var x = entity.rate;
 		if(isNaN(x) || x<0 || x>1){
 			alert("折扣率请设置0~1的两位小数,如:0.85");
 			return;
-		}
+		} */
 		if(entity.postage == null && entity.postage == ""){
 			alert("请填写邮费，若包邮请勾选是否包邮");
 			return;
 		}
-		if(entity.goodsSpecs.length <= 0){
-			alert("请至少设置一种规格");
-			return;
-		}
-		if(entity.goodsGallery.length <= 0){
-			alert("请至少设置一张展示图");
-			return;
-		}
+		
 		$.post("mt/mtGoods/updateGoods", {entity: JSON.stringify(entity)}, function(r){
 			if(r.success){
 				window.location = window.location;

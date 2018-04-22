@@ -6,7 +6,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>${projectName } - 后台管理</title>
+<title>${projectName } - 人力资源管理系统</title>
 <%@ include file="../common.jsp"%>
 <script type="text/javascript" src="static/admin/admin/login.js"></script>
 <script type="text/javascript" src="static/js/md5.js"></script>
@@ -55,8 +55,9 @@ ul,ol {
 </head>
 <body>
 	<div class="container">
-		<div class="form row" style="margin-top: 250px;width: 500px;"">
-			<h1 class="text-center">${projectName }后台管理系统</h1>
+		<div class="form row" style="margin-top: 250px;width: 450px;"">
+			<h1 class="text-center">${projectName }</h1>
+			<h1 class="text-center">人力资源管理系统</h1>
 			<div class="am-tabs-bd">
 				<div class="am-tab-panel am-active" id="tab-panel-login">
 					<form class="am-form">
@@ -70,8 +71,8 @@ ul,ol {
 							</div>
 
 							<div class="am-form-group ">
-								<button type="button" class="am-btn am-btn-primary am-btn-block  am-radius"
-									style="width: 100%; height: 100%;" onclick="return doLogin();">登录</button>
+								<button type="button" class="am-btn am-btn-primary am-btn-block  am-radius am-u-sm-centered"
+									style="width: 30%; height: 100%;" onclick="return doLogin();">登录</button>
 							</div>
 						</div>
 					</form>
