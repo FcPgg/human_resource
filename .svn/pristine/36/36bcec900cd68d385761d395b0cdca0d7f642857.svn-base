@@ -1,0 +1,28 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtUserSearchLogDao;
+import com.xt.ptus.mt.entity.MtUserSearchLog;
+import com.xt.ptus.mt.service.MtUserSearchLogService;
+
+@Service
+public class MtUserSearchLogServiceImpl extends BaseServiceImpl<MtUserSearchLog> implements MtUserSearchLogService{
+
+	@Autowired
+	private MtUserSearchLogDao dao;
+	
+	@Override
+	public void clearSearchLog(String userId) {
+		dao.clearSearchLog(userId);
+	}
+
+	@Override
+	public List<MtUserSearchLog> getUserSearchLog(String userId) {
+		return dao.getUserSearchLog(userId);
+	}
+}

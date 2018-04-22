@@ -1,0 +1,42 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.mt.service.MtMaterialResourcesService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mtMaterialResources/")
+public class MtMaterialResourcesController extends BaseController<MtMaterialResources> {
+	
+	private static Logger logger = Logger.getLogger(MtMaterialResourcesController.class);
+	
+	@Resource
+	private MtMaterialResourcesService service;
+	
+	@ResponseBody
+	@RequestMapping("getResourceByCatalogId")
+	public Result getResourceByCatalogId(@RequestParam("catalogId") String catalogId) {
+		Result result = new Result();
+		
+		try {
+			result.setData(service.getResourceByCatalogId(catalogId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+		}
+		
+		return result;
+	}
+}

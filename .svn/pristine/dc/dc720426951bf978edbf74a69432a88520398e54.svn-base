@@ -1,0 +1,19 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtPanicBuyingDao extends BaseDao<MtPanicBuying>{
+
+	Pagination<MtPanicBuying> getPanicBuyingList(int page, int rows);
+
+	List<MtPanicBuying> getBeginMinuteList(String id);
+
+	Pagination<MtPanicBuying> getReadyToStartGoods(int page, int rows);
+	
+	Pagination<MtPanicBuying> getReadyToEndGoods(int page, int rows);
+
+}

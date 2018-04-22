@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:task="http://www.springframework.org/schema/task" 
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/data/mongo
+		http://www.springframework.org/schema/data/mongo/spring-mongo-1.1.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+		http://www.springframework.org/schema/task 
+		http://www.springframework.org/schema/task/spring-task.xsd
+		">
+        
+    <context:component-scan base-package="com.xt"/>
+    
+    <context:property-placeholder location="classpath:hibernate.properties"/>
+    <!-- mysql -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${jdbc.driver.mysql}"/>
+        <property name="url" value="${jdbc.url.mysql}"/>
+        <property name="username" value="${jdbc.username.mysql}"/>
+        <property name="password" value="${jdbc.password.mysql}"/>
+    </bean> 
+    
+    <!-- sqlserver -->
+  <!--   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${jdbc.driver.sqlserver}"/>
+        <property name="url" value="${jdbc.url.sqlserver}"/>
+        <property name="username" value="${jdbc.username.sqlserver}"/>
+        <property name="password" value="${jdbc.password.sqlserver}"/>
+    </bean> -->
+    
+    <!-- org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="hibernateProperties">  
+            <props>  
+              <prop key="hibernate.dialect">${hibernate.dialect.mysql}</prop>
+                <!-- <prop key="hibernate.dialect">${hibernate.dialect.sqlserver}</prop> -->
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+                <!-- 这一个必须配置，否则会出现no session 的错误 -->
+                <!-- <prop key="hibernate.current_session_context_class">${hibernate.current_session_context_class}</prop> -->
+            </props>  
+        </property>
+        <!-- 自动扫描制定位置下的实体进行映射  --> 
+        <property name="packagesToScan">
+        	<list>
+        		<value>com.xt.ptus.sys.entity</value>
+        		<value>com.xt.ptus.mt.entity</value>
+        	</list>
+        </property>
+    </bean>
+    
+    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+
+    <!-- 配置注解实现管理事务（cglib：proxy-target-class="true"） -->
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+    
+    <!-- 配置事务的传播特性 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="edit*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+			<tx:method name="batchUpdate" propagation="REQUIRED" />
+			<tx:method name="doGet*" read-only="true" />
+			<tx:method name="find*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>
+
+	<!-- 配置事务的切入点 -->
+	<aop:config>
+		<!-- or (execution(* com.xt.ptus.ams..service.*.*(..))) -->
+		<aop:pointcut id="targetMethod"	expression="(execution(* com.xt.ptus.sys..service.*.*(..))) or (execution(* com.xt.ptus.mt.service.*.*(..))) " />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="targetMethod" />
+	</aop:config>
+	
+	<!-- 配置nultipartresolver,注意：id名必须这样写，不然会报错 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8"></property>
+        <property name="maxInMemorySize" value="10240000"></property>
+    </bean>
+    
+    <!-- 定时任务配置 -->
+    <!-- 开启这个配置，spring才能识别@Scheduled注解   -->  
+    <task:annotation-driven scheduler="qbScheduler" mode="proxy"/>  
+    <task:scheduler id="qbScheduler" pool-size="10"/>  
+    
+</beans>

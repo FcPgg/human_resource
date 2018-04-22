@@ -1,0 +1,55 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtRecommendsDataDao;
+import com.xt.ptus.mt.dao.MtSellerAccountTradeLogDao;
+import com.xt.ptus.mt.entity.MtRecommendsData;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.service.MtRecommendsDataService;
+
+@Service
+public class MtRecommendsDataServiceImpl extends BaseServiceImpl<MtRecommendsData> implements MtRecommendsDataService{
+
+	
+	@Autowired
+	private MtRecommendsDataDao recommendsDataDao;
+	
+	@Autowired
+	private MtSellerAccountTradeLogDao sllerAccountTradeLogDao;
+	
+	/**
+	 * 商家商品置顶
+	 */
+	@Override
+	public void topGoods(String id, String sellerId) {
+      
+		//通过goodId获取推荐商品,判断是否存在，不存在就加入推荐商品，存在修改商家为当前商家，用以置顶
+		//置顶同时扣除商家e币
+		MtRecommendsData recommendsData =recommendsDataDao.getTopGoodsByGoodsId(id);
+		MtRecommendsData rData = new MtRecommendsData();
+		if(recommendsData == null){
+			rData.setSellerId(0);
+			rData.setGoodsId(Integer.parseInt(id));
+			rData.setUpdator(Integer.parseInt(sellerId));
+			rData.setUpdateTime(new Date());
+			recommendsDataDao.save(rData);
+		}else{
+			recommendsData.setUpdateTime(new Date());
+			recommendsDataDao.update(recommendsData);
+		}
+		//扣除商家e币
+		MtSellerAccountTradeLog accountTradeLog = new MtSellerAccountTradeLog();
+		accountTradeLog.setAmount(-3);
+		accountTradeLog.setTarget("商品置顶（推荐商品）");
+		accountTradeLog.setTradeTime(new Date());
+		accountTradeLog.setOperator(Integer.parseInt(sellerId));
+		accountTradeLog.setSellerId(Integer.parseInt(sellerId));
+		sllerAccountTradeLogDao.save(accountTradeLog);
+	}
+}

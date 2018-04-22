@@ -1,0 +1,77 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.Date;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.alipay.service.AlipayService;
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSellerAmount;
+import com.xt.ptus.mt.service.MtSellerAmountService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.MD5Util;
+
+
+@Controller
+@RequestMapping(value = "mt/sellerAmount")
+public class MtSellerAmountController extends BaseController<MtSellerAmount> {
+	
+	@Resource
+	private MtSellerAmountService service;
+	private static Logger logger = Logger.getLogger(MtSellerAmountController.class);
+	/**
+	 * 获取商家账户余额
+	 */
+     @RequestMapping("getAmountSurplusMoeny")
+     @ResponseBody
+     public Result getAcountSurplusMoeny(HttpServletRequest request , @RequestParam("sellerId")String sellerId){
+    	 
+    	 Result result = new Result();
+		try {
+			result.setData(service.getAmountMoeny(sellerId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+    	 
+     }
+     /**
+      * 商家提现
+      */
+     @RequestMapping("sellerWithdrawals")
+     @ResponseBody
+     public Result sellerWithdrawals(@RequestParam("sellerId")String sellerId , @RequestParam("alipayAccountNumber")String alipayAccountNumber,@RequestParam("alipayAmount")double alipayAmount){
+    	 Result result = new Result();
+    	 boolean isSuccess = false;
+ 		try {
+ 			//判断提现金额是否大于商家余额，如果大于提现
+ 			 double amount = service.getAmountMoeny(sellerId);
+ 			 if(alipayAmount < amount){
+	 			 isSuccess = AlipayService.getInstance().transfer(alipayAccountNumber, MD5Util.MD5((new Date().toString())),alipayAmount, "商家提现");
+	 		     if(isSuccess != false){
+		 			result.setData(service.sellerWithdrawals(sellerId,alipayAmount,alipayAccountNumber));
+		 			result.setSuccess(true);
+ 			     }
+ 		    }
+ 		} catch (Exception e) {
+ 			result.setSuccess(false);
+ 			result.setMessage("操作失败");
+ 			result.setError(e.getMessage());
+ 			logger.error(e);
+ 		}
+ 		return result;
+     	 
+     }
+     
+}

@@ -1,0 +1,117 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.entity.MtIntegrateGoods;
+import com.xt.ptus.mt.service.MtIntegrateGoodsService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "mt/mobile/integrateGoods")
+public class MtIntegrateGoodsControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtIntegrateGoodsControllerMobile.class);
+	
+	@Resource
+	private MtIntegrateGoodsService service;
+	
+	/**
+	 * 获取正常积分商品数据
+	 */
+	@ResponseBody
+	@RequestMapping("listNormalIntegrateGoods")
+	public Result listNormalIntegrateGoods(HttpServletRequest request){
+		Result result = new Result();
+		
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			
+			DetachedCriteria dc = DetachedCriteria.forClass(MtIntegrateGoods.class);
+			dc.add(Restrictions.or(Restrictions.eq("ifRemove", Constants.INTEGRATE_GOODS_UNREMOVE), Restrictions.isNull("ifRemove")));
+			result.setData(service.getWithPagination(dc, page, rows, "price"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商品详情
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getIntegrateGoodsDetail")
+	public Result getIntegrateGoodsDetail(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			result.setData(service.get(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 兑换商品
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("exchangeGoods")
+	public Result exchangeGoods(
+			@RequestParam("id") String id,
+			@RequestParam("count") int count,
+			@RequestParam("userId") String userId,
+			@RequestParam("address") String address, 
+			@RequestParam("receivor") String receivor, 
+			@RequestParam("phoneNumber") String phoneNumber){
+		Result result = new Result();
+
+		try {
+			if(userId == null){
+				throw new Exception("当前用户不存在，请登录");
+			}
+			service.exchangeGoods(userId, id, count, address, receivor, phoneNumber);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

@@ -1,0 +1,107 @@
+package com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtGoodsSpecDao;
+import com.xt.ptus.mt.dao.MtPanicBuyingDao;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.mt.service.MtPanicBuyingService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtPanicBuyingServiceImpl extends BaseServiceImpl<MtPanicBuying> implements MtPanicBuyingService {
+
+	@Autowired
+	private MtPanicBuyingDao panicBuyingDao;
+	
+	@Autowired
+	private MtGoodsSpecDao specDao;
+
+	
+	/**
+	 * 更新限时抢购活动
+	 */
+
+	@Override
+	public void updatePanicBuying(MtPanicBuying panicBuying, String id) {
+		if (panicBuying != null) {
+			if (!StringUtil.IsNullOrEmpty(panicBuying.getId()) && Integer.parseInt(panicBuying.getId()) > 0) {
+				panicBuying.setUpdateTime(new Date());
+				panicBuying.setUpdator(Integer.parseInt(id));
+			} else {
+				panicBuying.setCreateTime(new Date());
+				panicBuying.setCreatorId(Integer.parseInt(id));
+			}
+
+			this.update(panicBuying);
+		}
+	}
+
+	/**
+	 * 获取限时抢商品
+	 * 
+	 */
+	@Override
+	public Pagination<MtPanicBuying> getPanicBuyingList(int page, int rows) {
+		Pagination<MtPanicBuying> pagination = panicBuyingDao.getPanicBuyingList(page, rows);
+	 
+		//获取商品原价
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtPanicBuying pb : pagination.getData()){
+				Map<String, Double> prices = specDao.getGoodsPrice(String.valueOf(pb.getGoodsId()));
+				pb.setMaxPrice(prices.get("maxPrice"));
+				pb.setMinPrice(prices.get("minPrice"));
+			}
+		}
+		return pagination;
+	}
+
+	/**
+	 * 获取即将开始抢购商品
+	 */
+	@Override
+	public Pagination<MtPanicBuying> getBeginMinuteList(int page, int rows) {
+		Pagination<MtPanicBuying> pagination =	panicBuyingDao.getReadyToStartGoods(page, rows);
+		//获取商品原价
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtPanicBuying pb : pagination.getData()){
+				Map<String, Double> prices = specDao.getGoodsPrice(String.valueOf(pb.getGoodsId()));
+				pb.setMaxPrice(prices.get("maxPrice"));
+				pb.setMinPrice(prices.get("minPrice"));
+			}
+		}
+		return pagination;
+	}
+
+	/**
+	 * 获取即将结束抢购商品
+	 */
+	@Override
+	public Pagination<MtPanicBuying> getSoonEndMinuteList(int page, int rows) {
+		Pagination<MtPanicBuying> pagination =panicBuyingDao.getReadyToEndGoods(page, rows);
+		//获取商品原价
+				if(pagination.getData() != null && pagination.getData().size() > 0){
+					for(MtPanicBuying pb : pagination.getData()){
+						Map<String, Double> prices = specDao.getGoodsPrice(String.valueOf(pb.getGoodsId()));
+						pb.setMaxPrice(prices.get("maxPrice"));
+						pb.setMinPrice(prices.get("minPrice"));
+					}
+				}
+				return pagination;
+	}
+
+	/**
+	 * 获取限时抢详情
+	 */
+	@Override
+	public MtPanicBuying getPaincBuyingInfoById(String id) {
+		MtPanicBuying panicBuy = panicBuyingDao.get(id, MtPanicBuying.class);
+		return panicBuy;
+	}
+}

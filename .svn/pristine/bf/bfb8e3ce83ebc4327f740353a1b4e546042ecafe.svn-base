@@ -1,0 +1,107 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtOrderInfoDao;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+
+@Repository
+public class MtOrderInfoDaoImpl extends BaseDaoImpl<MtOrderInfo> implements MtOrderInfoDao {
+
+	// 查询商家的所有订单
+	@Override
+	public List<MtOrderInfo> getOrderBySellerId(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		List order = criteria.list();
+		return order;
+	}
+
+	@Override
+	public List<MtOrderInfo> getOrderByIds(String[] ids) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("id").in(ids));
+		return criteria.list();
+	}
+
+	/**
+	 * 商家总销量
+	 */
+	@Override
+	public int getSellerSaleCount(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		criteria.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+		criteria.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+		criteria.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_RECEIVED));
+		
+		criteria.setProjection(Projections.rowCount());
+		
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	/**
+	 * 商家当月销量
+	 */
+	@Override
+	public int getSellerMonthSaleCount(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		criteria.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+		criteria.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+		criteria.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_RECEIVED));
+		
+		Calendar cale = Calendar.getInstance();  
+        
+		 // 获取当月第一天和最后一天  
+        Date firstday;
+        Date lastday;
+        
+        // 获取前月的第一天  
+        cale = Calendar.getInstance();  
+        cale.add(Calendar.MONTH, 0);  
+        cale.set(Calendar.DAY_OF_MONTH, 1);  
+        firstday = cale.getTime();  
+        // 获取前月的最后一天  
+        cale = Calendar.getInstance();  
+        cale.add(Calendar.MONTH, 1);  
+        cale.set(Calendar.DAY_OF_MONTH, 0);  
+        lastday = cale.getTime();  
+		
+        criteria.add(Property.forName("receivedTime").between(firstday, lastday));
+        
+		criteria.setProjection(Projections.rowCount());
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	@Override
+	public List<MtOrderInfo> getOrderByCodes(String[] orderCodes) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("orderCode").in(orderCodes));
+		return criteria.list();
+	}
+
+	@Override
+	public MtOrderInfo getOrderByCode(String code) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("orderCode").eq(code));
+		return (MtOrderInfo) criteria.uniqueResult();
+	}
+
+	@Override
+	public int getUserIdByOrderId(String orderId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+		criteria.add(Property.forName("id").eq(orderId));
+		criteria.setProjection(Projections.groupProperty("userId"));   
+		return  Integer.parseInt(criteria.uniqueResult().toString());
+	}
+}

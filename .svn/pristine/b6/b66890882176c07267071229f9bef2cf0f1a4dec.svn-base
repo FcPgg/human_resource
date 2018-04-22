@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserSearchLog;
+
+public interface MtUserSearchLogService extends BaseService<MtUserSearchLog>{
+
+	void clearSearchLog(String userId);
+
+	List<MtUserSearchLog> getUserSearchLog(String userId);
+
+}

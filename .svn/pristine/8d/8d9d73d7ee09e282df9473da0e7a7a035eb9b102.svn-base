@@ -1,0 +1,83 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.mt.service.MtUserBrowseLogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserBrowseLog/")
+public class MtUserBrowseLogControllerMobile extends BaseController<MtUserBrowseLog> {
+	
+	private static Logger logger = Logger.getLogger(MtUserBrowseLogControllerMobile.class);
+
+	@Resource
+	private MtUserBrowseLogService service;
+	
+	
+	//用户商品浏览记录（足迹）
+	@ResponseBody
+	@RequestMapping("getUserBrowseGoods")
+	public Result getUserBrowseGoods(@RequestParam("userId")String userId,HttpServletRequest request){
+		Result result = new Result();
+
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch (Exception e) {
+			logger.info("转换参数异常，使用默认分页数据");
+		}
+
+		try {
+			result.setData(service.getUserBrowseGoods(userId,page, rows));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+		}
+
+		return result;
+	}
+	
+	//用户浏览商家足迹
+	@ResponseBody
+	@RequestMapping("getUserBrowseSeller")
+	public Result getUserBrowseSeller(@RequestParam("userId")String userId,HttpServletRequest request){
+		Result result = new Result();
+
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch (Exception e) {
+			logger.info("转换参数异常，使用默认分页数据");
+		}
+
+		try {
+			result.setData(service.getUserBrowseSeller(userId,page, rows));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+		}
+
+		return result;
+	}
+	
+}

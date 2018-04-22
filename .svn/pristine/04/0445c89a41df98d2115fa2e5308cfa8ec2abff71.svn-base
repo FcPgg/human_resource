@@ -1,0 +1,23 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.http.HttpRequest;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.service.MtGoodsService;
+import com.xt.ptus.mt.service.MtSellerGalleryService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mtSellerGallery/")
+public class MtSellerGalleryController extends BaseController<MtSellerGallery> {
+	
+}

@@ -1,0 +1,160 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.entity.MtUserAddress;
+import com.xt.ptus.mt.service.MtUserAddressService;
+import com.xt.ptus.obejcts.Result;
+
+
+@Controller
+@RequestMapping("/mt/mobile/mtUserAddress/")
+public class MtUserAddressControllerMobile {
+
+	private static Logger logger = Logger.getLogger(MtUserAddressControllerMobile.class);
+	
+	@Resource
+	private MtUserAddressService service;
+	
+	/**
+	 * 更新数据
+	 * @param address
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateAddress")
+	public Result updateAddress(MtUserAddress address){
+		Result result = new Result();
+
+		try {
+			service.update(address);
+			result.setData(address);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 根据用户编号获取数据
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getAddressByUserId")
+	public Result getAddressByUserId(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getAddressByUserId(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 根据用户编号获取数据
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getDefaultAddressByUserId")
+	public Result getDefaultAddressByUserId(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getDefaultAddressByUserId(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取单条数据
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("get")
+	public Result get(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			result.setData(service.get(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 删除地址
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("remove")
+	public Result remove(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			service.remove(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 设置默认收货地址
+	 * @param id
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("setDefaultAddress")
+	public Result setDefaultAddress(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			MtUserAddress address = service.get(id);
+			address.setIfDefault(Constants.USER_SHIPPING_ADDRESS_DEFAULT);
+			service.update(address);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

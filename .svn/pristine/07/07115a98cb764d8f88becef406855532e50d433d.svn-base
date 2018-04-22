@@ -1,0 +1,47 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.dao.MtMessageConversationsDao;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+
+@Repository
+public class MtMessageConversationsDaoImpl extends BaseDaoImpl<MtMessageConversations> implements MtMessageConversationsDao{
+
+	@Override
+	public MtMessageConversations getConversations(String source, String target) {
+		return (MtMessageConversations) getCurrentSession().createCriteria(MtMessageConversations.class)
+				.add(Property.forName("source").eq(Integer.parseInt(source)))
+				.add(Property.forName("target").eq(Integer.parseInt(target))).uniqueResult();
+	}
+
+	@Override
+	public List<MtMessageConversations> getConversationsByTarget(String userId) {
+		return getCurrentSession().createCriteria(MtMessageConversations.class)
+				.add(Property.forName("target").eq(Integer.parseInt(userId))).list();
+	}
+
+	@Override
+	public List<MtMessageConversations> getConversationsBySource(String userId) {
+		return getCurrentSession().createCriteria(MtMessageConversations.class)
+				.add(Property.forName("source").eq(Integer.parseInt(userId))).list();
+	}
+
+	/**
+	 * 获取当前会话
+	 */
+	@Override
+	public List<MtMessageConversations> getCurrentConversations(String source, String target) {
+		return getCurrentSession().createCriteria(MtMessageConversations.class).add(
+				Restrictions.or(
+						Restrictions.and(Property.forName("source").eq(Integer.parseInt(source)), Property.forName("target").eq(Integer.parseInt(target))), 
+						Restrictions.and(Property.forName("source").eq(Integer.parseInt(target)), Property.forName("target").eq(Integer.parseInt(source))))).list();
+	}
+
+
+}

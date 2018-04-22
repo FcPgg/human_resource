@@ -1,0 +1,40 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+
+public interface MtOrderInfoDao extends BaseDao<MtOrderInfo>{
+
+	//查询商家的订单
+	List<MtOrderInfo> getOrderBySellerId(String sellerId);
+
+
+	List<MtOrderInfo> getOrderByIds(String[] ids);
+
+	/**
+	 * 获取商家总销量
+	 * @param sellerId
+	 * @return
+	 */
+	int getSellerSaleCount(String sellerId);
+	
+	/**
+	 * 获取商家月销量
+	 * @param sellerId
+	 * @return
+	 */
+	int getSellerMonthSaleCount(String sellerId);
+
+
+	List<MtOrderInfo> getOrderByCodes(String[] orderCodes);
+
+
+	MtOrderInfo getOrderByCode(String code);
+
+
+	//通过订购编号获取UserId
+	int getUserIdByOrderId(String orderId);
+	
+}

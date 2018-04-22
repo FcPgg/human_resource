@@ -1,0 +1,28 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.obejcts.Result;
+
+public interface MtUserAccountTradeLogService extends BaseService<MtUserAccountTradeLog>{
+
+	/**
+	 * 获取用户余额
+	 * @param userId
+	 * @return
+	 */
+	double getUserBalance(String userId);
+
+	/**
+	 * 移动端充值余额
+	 * @param id
+	 * @param amount
+	 */
+	boolean rechargeBalanceByAlipay(String id, int amount);
+
+	Pagination<MtUserAccountTradeLog> getUserAccountHistory(String userId, int pager, int rows);
+
+	Result withdrawCashAlipay(String userId, double cash, String targetAlipayUser) throws Exception;
+
+}

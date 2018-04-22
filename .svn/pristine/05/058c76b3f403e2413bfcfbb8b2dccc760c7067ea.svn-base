@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtOrderOperateLog;
+import com.xt.ptus.mt.service.MtOrderOperateLogService;
+
+@Service
+public class MtOrderOperateLogServiceImpl extends BaseServiceImpl<MtOrderOperateLog> implements MtOrderOperateLogService{
+
+}

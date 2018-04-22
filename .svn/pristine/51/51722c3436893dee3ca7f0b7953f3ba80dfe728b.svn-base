@@ -1,0 +1,64 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtUserAccountDao;
+import com.xt.ptus.mt.entity.MtUserAccount;
+import com.xt.ptus.mt.service.MtUserAccountService;
+
+@Service
+public class MtUserAccountServiceImpl extends BaseServiceImpl<MtUserAccount> implements MtUserAccountService{
+
+	@Autowired
+	private MtUserAccountDao dao;
+	
+	@Override
+	public List<MtUserAccount> getAccountByUserId(String userId, String category) {
+		return dao.getAccountByUserId(userId, category);
+	}
+
+	@Override
+	public void beforeInsert(MtUserAccount t) {
+		List<MtUserAccount> list = dao.getAccountByUserId(String.valueOf(t.getUserId()), t.getCategory());
+		if(list != null && list.size() > 0){
+			if(t.getIfDefault().equals(Constants.USER_ACCOUNT_DEFAULT)){
+				for(MtUserAccount acc : list){
+					acc.setIfDefault(Constants.USER_ACCOUNT_UNDEFAULT);
+					dao.update(acc);
+				}
+			}
+		} else {
+			t.setIfDefault(Constants.USER_ACCOUNT_DEFAULT);
+		}
+	}
+	
+	@Override
+	public void setDefaultAccount(String id, String userId, String category) {
+		List<MtUserAccount> list = dao.getAccountByUserId(userId, category);
+		if(list != null && list.size() > 0){
+			for(MtUserAccount acc : list){
+				acc.setIfDefault(Constants.USER_ACCOUNT_UNDEFAULT);
+				if(acc.getId().equals(id)){
+					acc.setIfDefault(Constants.USER_ACCOUNT_DEFAULT);
+				}
+				dao.update(acc);
+			}
+		}
+	}
+
+	@Override
+	public MtUserAccount getDefaultAccountByUserId(String userId, String category) {
+		return dao.getDefaultAccountByUserId(userId, category);
+	}
+
+	@Override
+	public List<MtUserAccount> getAlipayAccount(String userId) {
+		return dao.getAlipayAccount(userId);
+	}
+
+}

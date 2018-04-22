@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtUserReadLog;
+import com.xt.ptus.mt.service.MtUserReadLogService;
+
+@Service
+public class MtUserReadLogServiceImpl extends BaseServiceImpl<MtUserReadLog> implements MtUserReadLogService{
+
+}

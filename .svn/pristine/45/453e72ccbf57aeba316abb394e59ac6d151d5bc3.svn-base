@@ -1,0 +1,276 @@
+<%@ page language="java" contentType="text/html; charset=utf-8"
+	pageEncoding="utf-8"%>
+
+<link rel="stylesheet" href="static/assets/css/bootstrap-slider.min.css" />
+<script src="static/assets/laydate/laydate.js"></script>
+<script type="text/javascript" src="static/assets/bootstrap-file-upload/ajaxfileupload.js"></script>
+<link rel="stylesheet" href="static/dropdown/jquery.dorpdown.min.css" />
+<script src="static/dropdown/jquery.drowdown.js"></script>
+
+<style type='text/css'>
+/* Example 1 custom styles */
+#ex1Slider .slider-selection {
+	background: #BABABA;
+}
+
+/* Example 3 custom styles */
+#RGB {
+	height: 20px;
+	background: rgb(128, 128, 128);
+}
+
+#RC .slider-selection {
+	background: #FF8282;
+}
+
+#RC .slider-handle {
+	background: red;
+}
+
+#GC .slider-selection {
+	background: #428041;
+}
+
+#GC .slider-handle {
+	background: green;
+}
+
+#BC .slider-selection {
+	background: #8283FF;
+}
+
+#BC .slider-handle {
+	border-bottom-color: blue;
+}
+
+#R,#G,#B {
+	width: 300px;
+}
+
+.demo-input {
+	padding-left: 10px;
+	height: 38px;
+	min-width: 262px;
+	line-height: 38px;
+	border: 1px solid #e6e6e6;
+	background-color: #fff;
+	border-radius: 2px;
+}
+
+.demo-footer {
+	padding: 50px 0;
+	color: #999;
+	font-size: 14px;
+}
+
+.demo-footer a {
+	padding: 0 5px;
+	color: #01AAED;
+}
+</style>
+
+<div class="modal fade" id="dialogs" tabindex="-1" role="dialog"
+	aria-labelledby="dialogLabel" aria-hidden="true">
+	<div class="modal-dialog " style="width: 1300px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title" id="dialogLabel"></h4>
+			</div>
+			<div class="modal-body">
+				<ul class="nav nav-tabs" role="tablist">
+					<li class="active"><a href="#basicInfo" role="tab"
+						data-toggle="tab">基本信息</a></li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="basicInfo">
+
+						<form id="basicForm" class="form-horizontal" role="form" />
+
+						<input class="data-id" id="data-id" style="display: none;" />
+						<input class="data-id" id="panicBuyId" value="" style="display: none;" />
+
+						<div class="form-group">
+							<label for="firstname" class="col-sm-1 control-label">名称</label>
+							<div class="col-sm-11">
+								<input type="text" class="form-control" name="name" id="name"
+									placeholder="请输入名称" />
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="lastname" class="col-sm-1 control-label">优惠价格</label>
+							<div class="col-sm-11">
+								<input type="text" class="form-control" name="name" id="concessionalRate"
+									placeholder="请输入优惠价格" />
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="lastname" class="col-sm-1 control-label">抢购数量</label>
+							<div class="col-sm-11">
+								<input type="text" class="form-control" name="name" id="number"
+									placeholder="请输入抢购数量" >
+							</div>
+						</div>
+						                       
+                       <div class="form-group">
+							<label for="lastname" class="col-sm-1 control-label">限购数量</label>
+							<div class="col-sm-11">
+								<input type="text" class="form-control" name="name" id="limitNumber"
+									placeholder="请输入限购数量" >
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="lastname" class="col-sm-1 control-label">开始时间</label>
+							<div class="col-sm-11">
+								<input type="text" class="demo-input" placeholder="请选择日期" id="startTime">
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="lastname" class="col-sm-1 control-label">结束时间</label>
+							<div class="col-sm-11">
+								<input type="text" class="demo-input" placeholder="请选择日期" id="endTime">
+							</div>
+						</div>
+
+					   
+
+						<div class="form-group">
+							<label for="firstname" class="col-sm-1 control-label">链接到商家</label>
+							<div class="col-sm-4">
+							        <div class="dropdown-sin-1">
+							          <select id="sellers"  class="form-control"  style="display:none" placeholder="请选择：测试placeholder">
+   							          </select>
+							        </div>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="firstname" class="col-sm-1 control-label">链接到商品</label>
+							<div class="col-sm-4">
+								<div class="dropdown-sin-2">
+		   						    <select  select id="goodsId" style="width: 400px;">
+									</select>
+							    </div>
+							</div>
+						</div>
+
+						</form>
+					</div>
+					<!-- end of basicInfo -->
+
+					<!-- #goodsDetailInfo -->
+				</div>
+				<!-- enf of tab content -->
+			</div>
+			<!-- /.modal-body -->
+			<div class="modal-footer">
+				<button type="button" id="btnSubmit" class="btn btn-primary"
+					onclick="updateAd();">保存</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal -->
+</div>
+
+<script>
+
+
+
+
+$(function() {
+	//时间控件
+	lay('#version').html('-v'+ laydate.v);
+	
+	//执行一个laydate实例
+	laydate.render({
+	  elem: '#startTime', //指定元素
+	  theme: '#2177c7',
+	  min: 0,
+	  type: 'datetime',
+	  format:'yyyy-MM-dd HH:mm:ss'
+	});
+	//执行一个laydate实例
+	laydate.render({
+	  elem: '#endTime', //指定元素
+	  min: 0,
+	  theme: '#393D49',
+	  type: 'datetime',
+	  format:'yyyy-MM-dd HH:mm:ss'
+	});
+	
+	$("#rate").slider({
+		tooltip: 'always'
+	});
+
+	 $(function(){
+	 	 $("#goodsId").children().remove();
+		  var sellerId = $("#sellers").val();
+			$.get("admin/sysDictionaryDatas/getDictionaryByCode",{code:"mtGoodsWithSellerId", seller_id: sellerId},function(r){
+				$.each(r.data, function() {
+					var option = '<option value="' + this.code + '">' + this.description + '</option>';
+					$("#goodsId").append(option);
+				});
+		  });
+	  });
+	
+	$.get("admin/sysDictionaryDatas/getDictionaryByCode", {code: "mtSellers"}, function(r) {
+		if (r.success) {
+			if (r.data) {
+				$("#sellers").children().remove();
+				$.each(r.data, function() {
+					var option = '<option value="' + this.code + '">' + this.description + '</option>';
+					$("#sellers").append(option);
+				});
+				$('.dropdown-sin-1').dropdown({
+				    readOnly: true,
+				    input: '<input type="text" maxLength="20" placeholder="请输入搜索">',
+				    choice: function() {
+				    console.log(arguments, this);
+				    }
+				  });
+			}
+		}
+		
+	});
+	
+});
+
+	//更新限时抢
+	function updateAd(){
+		if($("#panicBuyId").val() != ''){
+		var data = {
+				 id:$("#panicBuyId").val(),
+				 name:$("#name").val(),
+		       	 startTime:$("#startTime").val(),
+		       	 endTime:$("#endTime").val(),
+		         number:$("#number").val(),
+				 concessionalRate:$("#concessionalRate").val()
+			  }
+		}else{
+		var data = {
+			 name:$("#name").val(),
+	       	 startTime:$("#startTime").val(),
+	       	 endTime:$("#endTime").val(),
+	         number:$("#number").val(),
+	       	 goodsId:$("#goods").val(),
+			 sellerId:$("#seller").val(),
+			 concessionalRate:$("#concessionalRate").val()
+		  }
+		}
+		$.post("mt/panicBuying/update", data, function(r){
+			if (r.success) {
+				window.location = window.location;
+			} else {
+				console.log("update integrate goods error:" + r.error);
+			}
+		}) 
+	}
+
+
+</script>

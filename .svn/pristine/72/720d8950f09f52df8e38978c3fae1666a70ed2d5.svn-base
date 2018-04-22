@@ -1,0 +1,10 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtIntegrateExchangeLog;
+
+public interface MtIntegrateExchangeLogService extends BaseService<MtIntegrateExchangeLog>{
+
+	public MtIntegrateExchangeLog integrateExchangeLogStatus(String id, String streamCompanyNo, String trackingNo);
+
+}

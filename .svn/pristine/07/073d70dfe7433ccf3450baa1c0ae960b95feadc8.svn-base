@@ -1,0 +1,70 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtWinningLog;
+import com.xt.ptus.mt.service.MtWinningLogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtWinningLog/")
+public class MtWinningLogControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtWinningLogControllerMobile.class);
+	
+	@Resource
+	private MtWinningLogService service;
+	
+	@ResponseBody
+	@RequestMapping("getUserWinningLog")
+	private Result getUserWinningLog(@RequestParam("userId") String userId, @RequestParam("page") String page, @RequestParam("rows") String rows){
+		Result result = new Result();
+
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认参数");
+		}
+		
+		try {
+			result.setData(service.getUserWinningLog(userId, pager, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("exchangeGoods")
+	private Result exchangeGoods(@RequestParam("id") String id, 
+			@RequestParam("address") String address, 
+			@RequestParam("phoneNumber") String phoneNumber, 
+			@RequestParam("receivor") String receivor){
+		Result result = new Result();
+
+		try {
+			result.setData(service.exchangeGoods(id, address, phoneNumber, receivor));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

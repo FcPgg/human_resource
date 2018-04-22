@@ -1,0 +1,250 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import net.sf.json.JSONObject;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.sun.corba.se.impl.orbutil.closure.Constant;
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.helper.KdniaoTrackQuery;
+import com.xt.ptus.mt.entity.MtCreditOrder;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.service.MtCreditOrderService;
+import com.xt.ptus.mt.service.MtOrderInfoService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.sys.entity.SysDictionaryDatas;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "/mt/mtCreditOrder/")
+public class MtCreditOrderController extends BaseController<MtCreditOrder> {
+	
+	private static Logger logger = Logger.getLogger(MtOrderGoodsController.class);
+	@Resource
+	private MtCreditOrderService service;
+	
+	/**
+	 * 退货单SellerId
+	 */
+
+	@ResponseBody
+	@RequestMapping("listNormalCreditOrder")
+	public Result listNormalGoods(HttpServletRequest request){
+		Result result = new Result();
+		
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			
+			DetachedCriteria goodsId = DetachedCriteria.forClass(MtGoods.class);
+			goodsId.add(Property.forName("sellerId").eq(Integer.parseInt(params.get("sellerId").toString())));
+			goodsId.setProjection(Property.forName("id"));
+		    
+			DetachedCriteria CreditOrder = DetachedCriteria.forClass(MtCreditOrder.class);
+			CreditOrder.add(Property.forName("goodsId").in(goodsId));
+			CreditOrder.addOrder(Order.desc("createTime"));
+			
+			result.setData(service.getWithPagination(CreditOrder, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}	
+	
+  /**
+   * 退货订单详情
+   */
+	@ResponseBody
+	@RequestMapping(value="getCreditOrderInfo")
+	public Result getCreditOrderInfo(HttpServletRequest request,@RequestParam("creditId")String creditId,@RequestParam("orderId")String orderId){
+		Result result = new Result();
+		try {
+			result.setData(service.getCreditOrderInfo(creditId,orderId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	
+
+	/**
+	 * 同意退货请求
+	 * @param createOrderId 退货单ID
+	 */
+	@ResponseBody
+	@RequestMapping(value="agreeReturnOfGoods")
+	public Result aggreeReturnOfGoods(@RequestParam(value="createOrderId")String createOrderId){
+		Result result = new Result();
+		try {
+			result.setData(service.aggreeReturnOfGoods(createOrderId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 不同意退货请求
+	 * @param createOrderId 退货单ID
+	 * @param disaggreeReason 不同意理由
+	 */
+	@ResponseBody
+	@RequestMapping(value="disagreeReturnOfGoods")
+	public Result disaggreeReturnOfGoods(
+			@RequestParam(value="createOrderId")String createOrderId,
+			@RequestParam(value="disaggreeReason")String disaggreeReason
+			){
+		Result result = new Result();
+		try {
+			result.setData(service.disagreeReturnOfGoods(createOrderId,disaggreeReason));	
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 卖家收货
+	 * @param createOrderId 退货单ID
+	 */
+	@ResponseBody
+	@RequestMapping(value="goodsReceipt")
+	public Result goodsReceipt(
+			@RequestParam(value="createOrderId")String createOrderId
+			){
+		Result result = new Result();
+		try {
+			result.setData(service.goodsReceipt(createOrderId));	
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * 退款列表(所有退款单，退货单退货状为5的)
+	 */
+	
+	@ResponseBody
+	@RequestMapping("listNormalRefundList")
+	public Result listNormalRefundList(HttpServletRequest request){
+		Result result = new Result();
+		
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			
+			DetachedCriteria refundList = DetachedCriteria.forClass(MtCreditOrder.class);
+			refundList.add(Property.forName("status").eq(Constants.CREDIT_ORDER_STATUS_RECEIVED));
+			refundList.addOrder(Order.desc("createTime"));
+			result.setData(service.getWithPagination(refundList, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}	
+	
+   /**
+    * 同意退款
+    */
+   @RequestMapping(value="refundAgree")
+   @ResponseBody
+   public Result refundAgree(HttpServletRequest request,@RequestParam(value="createOrderId")String createOrderId,@RequestParam(value="operatorId") String operatorId){
+	Result result = new Result();
+	try {
+		result.setData(service.refundAgree(createOrderId,operatorId));
+		result.setSuccess(true);
+	} catch (Exception e) {
+		result.setSuccess(false);
+		result.setMessage("操作失败");
+		result.setError(e.getMessage());
+		logger.error(e);
+	}
+	return result;
+   }
+
+  
+   /**
+    * 退货单物流
+    */
+   @RequestMapping(value="getCreditOrderLogistics")
+   @ResponseBody
+   public Result getCreditOrderLogistics(@RequestParam(value="creditId")String creditId){
+     
+	    Result result = new Result();
+		String expCode = null;
+		try {
+			String streamNo = service.getCreditOrderLogistics(creditId);
+		    String streamCompany = service.getCreditOrderStreamCompany(creditId);
+		    KdniaoTrackQuery api = new KdniaoTrackQuery();
+		    JSONObject json = JSONObject.fromObject(api.getOrderTracesByJson(streamCompany,streamNo));  
+		    result.setData(json);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	   
+   }
+
+
+}

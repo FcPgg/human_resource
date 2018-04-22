@@ -1,0 +1,16 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserAccount;
+
+public interface MtUserAccountDao extends BaseDao<MtUserAccount>{
+
+	List<MtUserAccount> getAccountByUserId(String userId, String category);
+
+	MtUserAccount getDefaultAccountByUserId(String userId, String category);
+
+	List<MtUserAccount> getAlipayAccount(String userId);
+
+}

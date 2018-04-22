@@ -1,0 +1,92 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Calendar;
+import java.util.Date;
+
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtIntegrateDao;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.service.MtIntegrateService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.util.DateUtil;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtIntegrateServiceImpl extends BaseServiceImpl<MtIntegrate> implements MtIntegrateService{
+
+	@Autowired
+	private MtIntegrateDao dao;
+	
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platformDao;
+	
+	@Override
+	public int getUserIntegrate(String userId) {
+		return dao.getUserIntegrate(Integer.parseInt(userId));
+	}
+
+	@Override
+	public Pagination<MtIntegrate> getHistory(String userId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtIntegrate.class);
+		
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		Pagination<MtIntegrate> pagination = dao.findByPagination(dc, page, rows, Order.desc("createTime"));
+
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+	    	 
+			for(MtIntegrate mt : pagination.getData()){
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(mt.getCreateTime());
+				
+				String month =  String.format("%02d", cal.get(Calendar.MONTH) + 1);
+				String date = String.format("%02d", cal.get(Calendar.DATE));
+				if(DateUtil.isThisWeek(mt.getCreateTime().getTime())){
+					mt.setCreateTimeFormat(DateUtil.getWeekOfDate(mt.getCreateTime()) + month + "-" + date);
+				} else if(DateUtil.isThisMonth(mt.getCreateTime().getTime())){
+					mt.setCreateTimeFormat("本月" + month + "-" + date);
+				} else {
+					mt.setCreateTimeFormat(cal.get(Calendar.MONTH) + 1 + "月" + month + "-" + date);
+				}
+			}
+		}
+				
+		return pagination;
+	}
+
+	@Override
+	public boolean buyIntegrateByAlipay(String id, int amount) {
+		if(!StringUtil.IsNullOrEmpty(id)){
+			MtIntegrate integrate = dao.get(id, MtIntegrate.class);
+			if(integrate != null){
+				integrate.setAmount(amount);
+				integrate.setRemark("用户购买e币");
+				integrate.setSource("用户支付宝账户");
+				integrate.setCreateTime(new Date());
+				dao.update(integrate);
+				
+				MtPlatformCapitalTradeLog pLog = new MtPlatformCapitalTradeLog();
+				pLog.setAmount(amount / 10);
+				pLog.setOperator(integrate.getUserId());
+				pLog.setRemark("用户购买e币");
+				pLog.setSource("用户支付宝");
+				pLog.setTarget("购买个" + amount + "e币");
+				pLog.setTradeTime(new Date());
+				pLog.setUserBuyIntegrateId(Integer.parseInt(integrate.getId()));
+				platformDao.save(pLog);
+				
+				return true;
+			}
+		}
+		return false;
+	}
+
+}

@@ -1,0 +1,96 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.util.Map;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.dao.MtGoodsSpecDao;
+import com.xt.ptus.mt.dao.MtUserBrowseLogDao;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.obejcts.Pagination;
+
+@Repository
+public class MtUserBrowseLogDaoImpl extends BaseDaoImpl<MtUserBrowseLog> implements MtUserBrowseLogDao {
+
+	@Autowired
+	private MtGoodsSpecDao specDao;
+
+	// 获取商家点击量
+	@Override
+	public int getSellerClickCount(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserBrowseLog.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		criteria.setProjection(Projections.rowCount());
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	// 商品点击量
+	@Override
+	public int getGoodsClickCount(String id) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserBrowseLog.class);
+		criteria.add(Property.forName("goodsId").eq(Integer.parseInt(id)));
+		criteria.setProjection(Projections.rowCount());
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	@Override
+	public Pagination<MtUserBrowseLog> getUserBrowseGoods(String userId, int page, int rows) {
+
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserBrowseLog.class);
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		dc.add(Restrictions.ne("goodsId", 0));
+		dc.addOrder(Order.desc("browseTime"));
+        dc.setProjection(Projections.distinct(Projections.property("goodsId")));
+		
+		Pagination<MtUserBrowseLog> pagination = this.findByPagination(dc, page, rows, Order.desc("browseTime"));
+
+		if (pagination.getData() != null && pagination.getData().size() > 0) {
+			for (MtUserBrowseLog log : pagination.getData()) {
+				Map<String, Double> prices = specDao.getGoodsPrice(String.valueOf(log.getGoodsId()));
+				log.setMaxPrice(prices.get("maxPrice"));
+				log.setMinPrice(prices.get("minPrice"));
+			}
+		}
+
+		return pagination;
+	}
+
+	@Override
+	public Pagination<MtUserBrowseLog> getUserBrowseSeller(String userId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserBrowseLog.class);
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		dc.add(Restrictions.eq("goodsId", 0));
+		dc.add(Restrictions.ne("sellerId", 0));
+		dc.addOrder(Order.desc("browseTime"));
+		
+		return this.findByPagination(dc, page, rows, Order.desc("browseTime"));
+	}
+
+	//获取用户商品浏览记录，通过用户Id和商品id
+	@Override
+	public MtUserBrowseLog getBrowseLogByGoodsIdAndUserId(String id,String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserBrowseLog.class);
+		criteria.add(Property.forName("goodsId").eq(Integer.parseInt(id)));
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		return (MtUserBrowseLog) criteria.uniqueResult();
+	}
+
+	//获取用户商家浏览记录，通过用户Id和商家id
+	@Override
+	public MtUserBrowseLog getBrowseLogSeller(String id, String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserBrowseLog.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(id)));
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+	    criteria.add(Property.forName("goodsId").eq(0));
+		return (MtUserBrowseLog) criteria.uniqueResult();
+	}
+
+}

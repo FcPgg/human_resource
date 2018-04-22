@@ -1,0 +1,16 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+
+public interface MtSellerGalleryDao extends BaseDao<MtSellerGallery>{
+
+	List<MtSellerGallery> getGalleryBySellerId(String sellerId);
+
+	List<MtSellerGallery> getGalleryBannerBySellerId(String sellerId);
+
+
+}

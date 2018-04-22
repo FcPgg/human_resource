@@ -1,0 +1,10 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSellerRechargeTradeLog;
+
+public interface MtSellerRechargeTradeLogDao extends BaseDao<MtSellerRechargeTradeLog>{
+
+	MtSellerRechargeTradeLog getAmountByOutTradeNo(String outTradeNo);
+
+}

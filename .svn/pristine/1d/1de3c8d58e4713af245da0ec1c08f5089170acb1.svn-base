@@ -1,0 +1,20 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.xt.ptus.mt.service.MtOrderGoodsService;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtOrderGoods/")
+public class MtOrderGoodsControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtOrderGoodsControllerMobile.class);
+	
+	@Resource
+	private MtOrderGoodsService service;
+	
+}

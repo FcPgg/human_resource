@@ -1,0 +1,103 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtIntegrateDao;
+import com.xt.ptus.mt.dao.MtSellerAccountTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerVoucherCenterDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.entity.MtSellerVoucherCenter;
+import com.xt.ptus.mt.entity.MtUserInfo;
+import com.xt.ptus.mt.service.MtSellerAccountTradeLogService;
+
+@Service
+public class MtSellerAccountTradeLogServiceImpl extends BaseServiceImpl<MtSellerAccountTradeLog> implements MtSellerAccountTradeLogService{
+
+	@Autowired
+	private MtSellerAccountTradeLogDao sllerAccountTradeLogDao;
+	
+	@Autowired
+	private MtSellerVoucherCenterDao sellerVoucherCenterDao;
+	
+	@Autowired
+	private MtUserInfoDao userInfoDao;
+	
+	@Autowired 
+	private MtIntegrateDao userIntegrateLogDao;
+
+	/**
+	 * 获取余额
+	 */
+	@Override
+	public double getAcountSurplusMoeny(String sellerId) {
+		double acountSurplusMoeny = 0;
+		List<MtSellerAccountTradeLog>  accountTradeLog  = sllerAccountTradeLogDao.getSlleAccountTradeLog(sellerId);
+		for(MtSellerAccountTradeLog account : accountTradeLog){
+			acountSurplusMoeny += account.getAmount();
+		}
+		return acountSurplusMoeny;
+	}
+
+	/**
+	 * 商家E币充值
+	 */
+	@Override
+	public MtSellerAccountTradeLog ECoinRecharge(String sellerId,String voucherCenterId, String number) {
+           
+		//获取充值得到套餐
+		MtSellerVoucherCenter voucherCenter = sellerVoucherCenterDao.get(voucherCenterId, MtSellerVoucherCenter.class);
+		
+		//提交充值记录
+		MtSellerAccountTradeLog accountTradeLog = new MtSellerAccountTradeLog();
+		accountTradeLog.setAmount(voucherCenter.getECoinNumber() * Integer.parseInt(number));
+		accountTradeLog.setSource(Constants.SELLER_ACCOUNT_RECHARGE_INFLOW);
+		accountTradeLog.setTradeTime(new Date());
+		accountTradeLog.setOperator(Integer.parseInt(sellerId));
+		accountTradeLog.setSellerId(Integer.parseInt(sellerId));
+		sllerAccountTradeLogDao.save(accountTradeLog);
+		return accountTradeLog;
+	}
+
+	 /**
+     * 商家e币转入个人账户
+     */
+	@Override
+	public boolean sellerIntegrateToUserAccount(String sellerId,String accountNumbers, int integralNumber) {
+         
+		//获取用户编号UserId
+		String userId = userInfoDao.getUserIdByAccountNumbers(accountNumbers);
+		if(userId != null || userId.isEmpty()){
+		   
+			//创建商家e币记录
+			MtSellerAccountTradeLog sellerAccountTradeLog = new MtSellerAccountTradeLog();
+			sellerAccountTradeLog.setSellerId(Integer.parseInt(sellerId));
+			sellerAccountTradeLog.setAmount(0-integralNumber);
+			sellerAccountTradeLog.setTarget("转入个人账户"+accountNumbers);
+			sellerAccountTradeLog.setTradeTime(new Date());
+            sellerAccountTradeLog.setOperator(Integer.parseInt(sellerId));
+            sllerAccountTradeLogDao.save(sellerAccountTradeLog);
+            
+            //创建个人账户e币记录
+            MtIntegrate userIntegrateLog = new MtIntegrate();
+            userIntegrateLog.setUserId(Integer.parseInt(userId));
+            userIntegrateLog.setAmount(integralNumber);
+            userIntegrateLog.setSource("由商家账户转入");
+            userIntegrateLog.setCreateTime(new Date());
+            userIntegrateLog.setRemark("由商家账户转入");
+            userIntegrateLogDao.save(userIntegrateLog);
+            
+		   return true;
+		}
+
+		return false;
+	}
+
+}

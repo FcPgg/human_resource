@@ -1,0 +1,68 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+import com.xt.ptus.mt.dao.MtTaskListDao;
+import com.xt.ptus.mt.dao.MtTaskParamsDao;
+import com.xt.ptus.util.StringUtil;
+
+@Repository
+public class MtTaskListDaoImpl extends BaseDaoImpl<MtTaskList> implements MtTaskListDao{
+
+	@Autowired
+	private MtTaskParamsDao paramsDao;
+	
+	@Override
+	public MtTaskList addTask(String chanel, String executeTime, String serviceName, String methodName, List<MtTaskParams> params) throws Exception {
+		if(StringUtil.IsNullOrEmpty(chanel) || 
+				StringUtil.IsNullOrEmpty(executeTime) ||
+				StringUtil.IsNullOrEmpty(serviceName) ||
+				StringUtil.IsNullOrEmpty(methodName)){
+			throw new Exception("传递参数有误！");
+		}
+		
+		MtTaskList task = new MtTaskList();
+		task.setChanel(chanel);
+		task.setExecuteTime(executeTime);
+		task.setServiceName(serviceName);
+		task.setMethodName(methodName);
+		task.setParams(params);
+		
+		//把执行时间换成YYYY-MM-DD hh:mm:ss
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    long etime = Long.valueOf(executeTime).longValue();
+        long lt = new Long(etime*1000);
+        Date date = new Date(lt);
+        String time = simpleDateFormat.format(date);
+        
+		task.setRemark("定时任务[于 " + time + " ]执行[" + serviceName + "." + methodName + "]");
+		this.save(task);
+		
+		if(params != null){
+			for(MtTaskParams param : params){
+				param.setTaskId(Integer.parseInt(task.getId()));
+				paramsDao.save(param);
+			}
+		}
+		return task;
+	}
+
+
+	@Override
+	public void removeTaskByTaskId(String id) {
+		Session session = getCurrentSession();
+		SQLQuery query = session.createSQLQuery("DELETE FROM mt_task_list where id = ?");
+		query.setParameter(0, id);
+		query.executeUpdate();
+	}
+}

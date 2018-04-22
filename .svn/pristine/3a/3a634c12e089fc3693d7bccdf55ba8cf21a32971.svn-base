@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtIntegrateFlow;
+import com.xt.ptus.mt.dao.MtIntegrateFlowDao;
+
+@Repository
+public class MtIntegrateFlowDaoImpl extends BaseDaoImpl<MtIntegrateFlow> implements MtIntegrateFlowDao{
+
+}

@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSellerRechargeTradeLog;
+
+public interface MtSellerRechargeTradeLogService extends BaseService<MtSellerRechargeTradeLog>{
+
+	void foundSellerRecharge(String out_trade_no, String total_amount,String sellerId, String number, String setMealId);
+
+	MtSellerRechargeTradeLog getAmountByOutTradeNo(String outTradeNo);
+
+	void rechargeTradeLogByAlipay(String outTradeNo);
+
+}

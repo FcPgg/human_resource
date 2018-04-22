@@ -1,0 +1,1117 @@
+package com.xt.ptus.mt.service.impl;
+
+import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.alipay.api.AlipayApiException;
+import com.xt.ptus.alipay.service.AlipayService;
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtCreditOrderDao;
+import com.xt.ptus.mt.dao.MtGoodsDao;
+import com.xt.ptus.mt.dao.MtGoodsSpecDao;
+import com.xt.ptus.mt.dao.MtMoneyFlowDao;
+import com.xt.ptus.mt.dao.MtOrderGoodsDao;
+import com.xt.ptus.mt.dao.MtOrderInfoDao;
+import com.xt.ptus.mt.dao.MtOrderOperateLogDao;
+import com.xt.ptus.mt.dao.MtPanicBuyingDao;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAmountDao;
+import com.xt.ptus.mt.dao.MtSellerDao;
+import com.xt.ptus.mt.dao.MtTaskListDao;
+import com.xt.ptus.mt.dao.MtTaskParamsDao;
+import com.xt.ptus.mt.dao.MtUserAccountDao;
+import com.xt.ptus.mt.dao.MtUserAccountTradeLogDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.entity.MtGoodsSpec;
+import com.xt.ptus.mt.entity.MtMoneyFlow;
+import com.xt.ptus.mt.entity.MtOrderGoods;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtOrderOperateLog;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerAmount;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+import com.xt.ptus.mt.entity.MtUserAccount;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.pojo.MtOrderSellerPojo;
+import com.xt.ptus.mt.service.MtOrderInfoService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.util.DateUtil;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtOrderInfoServiceImpl extends BaseServiceImpl<MtOrderInfo> implements MtOrderInfoService {
+
+	private static Logger logger = Logger.getLogger(MtOrderInfoServiceImpl.class);
+
+	@Autowired
+	private MtOrderInfoDao orderDao;
+
+	@Autowired
+	private MtOrderGoodsDao orderGoodsDao;
+
+	@Autowired
+	private MtSellerDao sellerDao;
+
+	@Autowired
+	private MtGoodsDao goodsDao;
+
+	@Autowired
+	private MtGoodsSpecDao goodsSpecDao;
+
+	@Autowired
+	private MtOrderOperateLogDao logDao;
+
+	@Autowired
+	private MtCreditOrderDao creditOrderDao;
+
+	@Autowired
+	private MtPanicBuyingDao panicDao;
+
+	@Autowired
+	private MtUserInfoDao userDao;
+	
+	@Autowired
+	private MtUserAccountDao userAccountDao;
+
+	@Autowired
+	private MtUserAccountTradeLogDao userTradeDao;
+
+	@Autowired
+	private MtMoneyFlowDao flowDao;
+
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platFormDao;
+
+	@Autowired
+	private MtSellerAmountDao sellerAmountDao;
+	
+	@Autowired
+	private MtTaskListDao taskListDao; 
+	
+	@Autowired
+	private MtTaskParamsDao taskParamsDao;
+	
+	@Override
+	public void beforeInsert(MtOrderInfo t) {
+		t.setOrderCode(MD5Util.MD5(String.valueOf(t.hashCode())));
+		t.setCreateTime(new Date());
+	}
+
+	/**
+	 * 创建订单
+	 * 
+	 * @return
+	 */
+	@Override
+	public String createOrders(List<MtOrderInfo> orders) {
+		String message = null;
+		if (orders != null && orders.size() > 0) {
+			for (MtOrderInfo order : orders) {
+
+				if (order.getOrderGoods() != null && order.getOrderGoods().size() > 0) {
+					for (MtOrderGoods good : order.getOrderGoods()) {
+						if (good.getPanicId() > 0) {
+							MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+							// 限制数量判断
+							if (panic.getLimitNumber() < good.getNumber()) {
+								return "您超过了限购数量";
+							} else if (panic.getNumber() < good.getNumber()) {
+								return "商品数量不足，无法完成抢购";
+							} else if (panic.getNumber() == 0) {
+								return "您的手慢了，这件商品已经被抢购一空";
+							}
+							panic.setNumber(panic.getNumber() - good.getNumber());
+							panicDao.update(panic);
+						}
+					}
+				}
+
+				
+				this.update(order);
+				createOrderLog(order.getId(), order.getUserId(), Constants.ORDER_OPERATE_LOG_CREATE, "创建新的订单",null);
+			}
+		}
+		return message;
+	}
+
+	@Override
+	public void afterUpdate(MtOrderInfo t) {
+		if (t.getOrderGoods() != null && t.getOrderGoods().size() > 0) {
+
+			for (MtOrderGoods good : t.getOrderGoods()) {
+				if (!StringUtil.IsNullOrEmpty(good.getId()) && Integer.parseInt(good.getId()) > 0) {
+					orderGoodsDao.update(good);
+				} else {
+					good.setOrderId(Integer.parseInt(t.getId()));
+
+					orderGoodsDao.save(good);
+
+					if (good.getPanicId() > 0) {
+						MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+						if (panic != null) {
+							panic.setNumber(panic.getNumber() - good.getNumber());
+							panicDao.update(panic);
+						}
+						MtGoodsSpec spec = goodsSpecDao.get(String.valueOf(good.getSpecId()), MtGoodsSpec.class);
+						if (spec != null && spec.getInventory() >= good.getNumber()) {
+							spec.setInventory(spec.getInventory() - good.getNumber());
+							goodsSpecDao.update(spec);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * 物流状态修改
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public MtOrderInfo streamStatusUpdate(String orderId, int streamStatus, int operatorId) throws Exception {
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		if (order != null) {
+			switch (streamStatus) {
+			// 待发货
+			case Constants.ORDER_STREAM_STATUS_READY_SHIPPED:
+				order.setStreamStatus(Constants.ORDER_STREAM_STATUS_READY_SHIPPED);
+				break;
+			// 已收货(确认收货)
+			case Constants.ORDER_STREAM_STATUS_RECEIVED:
+				
+				break;
+			// 已发货
+			case Constants.ORDER_STREAM_STATUS_SHIPPED:
+				order.setStreamStatus(Constants.ORDER_STREAM_STATUS_SHIPPED);
+				order.setShippedTime(new Date());
+				order.setShippor(operatorId);
+				break;
+			default:
+				throw new Exception("未知状态");
+			}
+			orderDao.update(order);
+		}
+		return order;
+	}
+
+	/**
+	 * 获取订单数据
+	 * 
+	 * @return Map<String, Object>
+	 * @param ArrayList
+	 *            <MtOrderInfo> orderList
+	 * @param ArrayList
+	 *            <MtSellerPojo> sellerList
+	 * @param ArrayList
+	 *            <MtOrderGoods> goodsList
+	 */
+	@Override
+	public Map<String, Object> getOrderByUserId(String userId, int page, int rows, Map<String, Object> params) {
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		DetachedCriteria dc = DetachedCriteria.forClass(MtOrderInfo.class);
+
+		if (params.containsKey("params") && !StringUtil.IsNullOrEmpty(params.get("params").toString())) {
+			if ("unpaied".equals(params.get("params"))) {
+				// 待付款
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_NORMAL));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_UNPAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_READY_SHIPPED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO));// 订单是否发生过退货
+			} else if ("readyShipped".equals(params.get("params"))) {
+				// 待发货
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_NORMAL));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_READY_SHIPPED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO));// 订单是否发生过退货
+			} else if ("readyReceive".equals(params.get("params"))) {
+				// 待收货
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_NORMAL));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_SHIPPED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO));// 订单是否发生过退货
+			} else if ("readyValuate".equals(params.get("params"))) {
+				// 待评价
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_RECEIVED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO));// 订单是否发生过退货
+			}
+		}
+
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+
+		Pagination<MtOrderInfo> pagination = orderDao.findByPagination(dc, page, rows, Order.desc("createTime"));
+
+		List<MtOrderInfo> orderList = pagination.getData();
+
+		result.put("orders", pagination);
+
+		List<MtOrderSellerPojo> sellerList = new ArrayList<MtOrderSellerPojo>();
+
+		List<MtOrderGoods> goodsList = new ArrayList<MtOrderGoods>();
+
+		createOrderPojo(orderList, sellerList, goodsList);
+
+		result.put("sellerList", sellerList);
+
+		result.put("goodsList", goodsList);
+
+		return result;
+	}
+	
+
+	private void createOrderPojo(List<MtOrderInfo> orderList, List<MtOrderSellerPojo> sellerList, List<MtOrderGoods> goodsList) {
+		if (orderList != null && orderList.size() > 0) {
+
+			for (MtOrderInfo order : orderList) {
+				double orderSum = 0.0;
+
+				List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+				if (orderGoods != null && orderGoods.size() > 0) {
+					for (MtOrderGoods good : orderGoods) {
+
+						MtSeller seller = sellerDao.get(good.getSellerId(), MtSeller.class);
+
+						if (seller != null) {
+							MtOrderSellerPojo sellerPojo = new MtOrderSellerPojo(seller.getId(), seller.getName(), Integer.parseInt(order.getId()), seller.getLogo());
+							if (!checkSellerExist(sellerList, sellerPojo)) {
+								sellerList.add(sellerPojo);
+							}
+						}
+						double price = 0.0;
+						if (good.getRate() == 0 || good.getRate() == 1) {
+							price = (good.getPrice() + good.getPostage());
+						} else {
+							price = (good.getPrice() * good.getRate() + good.getPostage());
+						}
+
+						// 计算显示抢购
+						if (good.getPanicId() > 0) {
+							MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+							price -= panic.getConcessionalRate();
+						}
+
+						good.setSubtotal(price);
+						
+						// 设置总价
+						orderSum += price * good.getNumber();
+
+						goodsList.add(good);
+					}
+				}
+				order.setSum(orderSum);
+			}
+		}
+	}
+
+	/**
+	 * 订单状态修改
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public MtOrderInfo orderStatusUpdate(String orderId, int orderStatus, int operatorId) throws Exception {
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		if (order != null) {
+
+			switch (orderStatus) {
+			// 取消订单
+			case Constants.ORDER_STATUS_CANCEL:
+				order.setOrderStatus(Constants.ORDER_STATUS_CANCEL);
+				doAbrogateOrder(order);
+				break;
+			// 交易成功
+			case Constants.ORDER_STATUS_SUCCESS:
+				order.setOrderStatus(Constants.ORDER_STATUS_SUCCESS);
+				break;
+			// 删除订单
+			case Constants.ORDER_STATUS_REMOVE:
+				order.setOrderStatus(Constants.ORDER_STATUS_REMOVE);
+				break;
+			default:
+				throw new Exception("未知状态");
+			}
+			orderDao.update(order);
+		}
+		return order;
+	}
+
+	/**
+	 * 取消订单
+	 * 
+	 * @param order
+	 */
+	private void doAbrogateOrder(MtOrderInfo order) {
+		if (order.getOrderGoods() != null && order.getOrderGoods().size() > 0) {
+			for (MtOrderGoods goods : order.getOrderGoods()) {
+				if (goods.getPanicId() > 0) {
+					MtPanicBuying panic = panicDao.get(String.valueOf(goods.getPanicId()), MtPanicBuying.class);
+					panic.setNumber(panic.getNumber() + goods.getNumber());
+					panicDao.update(panic);
+				}
+			}
+		}
+	}
+
+	/**
+	 * 支付状态修改
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public MtOrderInfo orderPayStatusUpdate(String orderId, int payStatus, int operatorId) throws Exception {
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		if (order != null) {
+
+			switch (payStatus) {
+			// 未支付
+			case Constants.ORDER_PAY_STATUS_UNPAID:
+				order.setPayStatus(Constants.ORDER_PAY_STATUS_UNPAID);
+				break;
+			// 已支付
+			case Constants.ORDER_PAY_STATUS_PAID:
+				order.setPayStatus(Constants.ORDER_PAY_STATUS_PAID);
+				order.setPaiedTime(new Date());
+				break;
+			default:
+				throw new Exception("未知状态");
+			}
+
+			orderDao.update(order);
+		}
+		return order;
+	}
+
+	/**
+	 * 复杂订单
+	 */
+	@Override
+	public MtOrderInfo getComplexOrder(String id) {
+		MtOrderInfo orderInfo = orderDao.get(id, MtOrderInfo.class);
+		List<MtOrderGoods> orderGoods = orderGoodsDao.getGoodsByOrderId(id, Constants.ORDER_STATUS_NORMAL);
+		if (orderGoods != null && orderGoods.size() > 0) {
+			for (MtOrderGoods good : orderGoods) {
+				double subtotal = 0.0;// 小计
+				if (good.getRate() == 0 || good.getRate() == 1) {
+					subtotal += good.getPrice() * good.getNumber() + good.getPostage();
+				} else {
+					subtotal += good.getPrice() * good.getRate() * good.getNumber() + good.getPostage();
+				}
+				good.setSubtotal(subtotal);
+			}
+			orderInfo.setOrderGoods(orderGoods);
+		}
+		return orderInfo;
+	}
+
+	// 检查商家数据是否存在
+	private boolean checkSellerExist(List<MtOrderSellerPojo> sellerList, MtOrderSellerPojo pojo) {
+		boolean ifExists = false;
+		for (MtOrderSellerPojo seller : sellerList) {
+			if (seller.getOrderId() == pojo.getOrderId() && seller.getId().equals(pojo.getId()))
+				ifExists = true;
+		}
+		return ifExists;
+	}
+
+	/**
+	 * 创建日志
+	 * 
+	 * @param t
+	 */
+	private void createOrderLog(String orderId, int operatorId, int category, String remark , String taskId) {
+		MtOrderOperateLog log = new MtOrderOperateLog();
+
+		log.setOrderId(Integer.parseInt(orderId));
+		log.setOperator(operatorId);
+		log.setCategory(category);
+		log.setTaskId(taskId);
+		log.setOperateTime(new Date());
+		log.setRemark(remark);
+
+		logDao.save(log);
+	}
+
+	@Override
+	public List<MtOrderInfo> getComplexOrderBySeller(String sellerId) {
+		int status = 0;
+		List<MtOrderInfo> MtOrderInfo = orderDao.getOrderBySellerId(sellerId);
+		for (MtOrderInfo orderInfo : MtOrderInfo) {
+			// 订单商品
+			List<MtOrderGoods> orderGoods = orderGoodsDao.getGoodsByOrderId(orderInfo.getId(), status);
+			if (orderGoods != null && orderGoods.size() > 0) {
+				for (MtOrderGoods good : orderGoods) {
+					double subtotal = 0.0;// 小计
+					if (good.getRate() == 0 || good.getRate() == 1) {
+						subtotal += good.getPrice() * good.getNumber() + good.getPostage();
+					} else {
+						subtotal += good.getPrice() * good.getRate() * good.getNumber() + good.getPostage();
+					}
+					good.setSubtotal(subtotal);
+				}
+				orderInfo.setOrderGoods(orderGoods);
+			}
+		}
+		return MtOrderInfo;
+	}
+
+	/**
+	 * 商家发货
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public MtOrderInfo shippedOrder(String orderId, String streamCompanyNo, String trackingNo, int streamStatus, String userId) throws Exception {
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		if (order != null) {
+			order.setStreamStatus(streamStatus);
+			order.setStreamCompanyNo(streamCompanyNo);
+			order.setTrackingNo(trackingNo);
+			order.setShippedTime(new Date());
+			order.setShippor(Integer.parseInt(userId));
+			orderDao.update(order);
+		
+			//设置自动收货任务（7天后自动收货）
+			String chanel = "autoGoodsReceipt";
+			String serviceName = "mtOrderInfoServiceImpl";
+			String methodName = "userReceiveGoods";
+			String executeTime = String.valueOf(DateUtil.getXdaysLater(7));
+			ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+			MtTaskParams params1 = new MtTaskParams();
+			params1.setName("订单编号");
+			params1.setParamName("orderId");
+			params1.setDataType("String");
+			params1.setValue(orderId);
+			list.add(params1);
+			MtTaskParams params2 = new MtTaskParams();
+			params2.setName("操作人编号");
+			params2.setParamName("operatorId");
+			params2.setDataType("String");
+			params2.setValue(userId);
+			list.add(params2);
+			MtTaskList taskList =  taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+			
+			
+			// 修改后添加到日志
+			MtOrderOperateLog log = new MtOrderOperateLog();
+			log.setOrderId(Integer.parseInt(orderId));
+			log.setOperator(Integer.parseInt(userId));
+			log.setOperateTime(new Date());
+			log.setCategory(Constants.ORDER_OPERATE_LOG_DELIVERY);
+			log.setRemark("卖家发货");
+			log.setTaskId(taskList.getId());
+			logDao.save(log);
+		}
+		
+		return order;
+	}
+	
+	
+	/**
+	 * 买家收货
+	 */
+	@Override
+	public void userReceiveGoods(String orderId, int operatorId) throws Exception {
+//		payToSellerImpl(orderId, operatorId);
+		
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		order.setOrderStatus(Constants.ORDER_STATUS_SUCCESS);
+		order.setStreamStatus(Constants.ORDER_STREAM_STATUS_RECEIVED);
+		order.setReceivedTime(new Date());
+		
+		//收货后，删除自动收货任务
+		//从订单日志中获取taskId
+		int category = Constants.ORDER_OPERATE_LOG_DELIVERY;
+		String taskId = logDao.getTaskIdByOrderId(orderId,category);
+		taskParamsDao.removeParamsByTaskId(taskId);
+		taskListDao.removeTaskByTaskId(taskId);
+		
+		//自动：7天后不退款，系统自动关闭订单并打款到商家
+		String chanel = "autoPayToSellerImpl";
+		String serviceName = "mtOrderInfoServiceImpl";
+		String methodName = "payToSellerImpl";
+		String executeTime = String.valueOf(DateUtil.getXdaysLater(7));
+		ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+		MtTaskParams params1 = new MtTaskParams();
+		params1.setName("订单编号");
+		params1.setParamName("orderId");
+		params1.setDataType("String");
+		params1.setValue(orderId);
+		list.add(params1);
+		MtTaskParams params2 = new MtTaskParams();
+		params2.setName("操作人编号");
+		params2.setParamName("operatorId");
+		params2.setDataType("String");
+		params2.setValue(String.valueOf(operatorId));
+		list.add(params2);
+		MtTaskList taskList = taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+		
+		createOrderLog(order.getId(), operatorId, Constants.ORDER_OPERATE_LOG_RECEIVE, "用户确认收货",taskList.getId());
+	}
+	
+	/**
+	 * 支付到商家
+	 * @param orderId
+	 * @param operatorId
+	 * @throws Exception 
+	 */
+	private void payToSellerImpl(String orderId, int operatorId) throws Exception {
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+		order.setOrderGoods(orderGoods);
+		if (orderGoods != null && orderGoods.size() > 0) {
+			double sum = 0.0;
+			double cashback = 0.0;
+			for (MtOrderGoods good : orderGoods) {
+				//商品价格
+				if (good.getRate() == 0 || good.getRate() == 1) {
+					sum += (good.getPrice() + good.getPostage()) * good.getNumber();
+				} else {
+					sum += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+				}
+				
+				// 计算显示抢购
+				if (good.getPanicId() > 0) {
+					MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+					sum -= panic.getConcessionalRate() * good.getNumber();
+				}
+				
+				//返现金额
+				if(good.getCashback() > 0){
+					cashback += good.getCashback() * good.getNumber();
+				}
+			}
+			
+			//获取手续费
+			InputStream is = this.getClass().getResourceAsStream("/alipay.properties");
+			Properties prop = new Properties();
+			prop.load(is);
+			is.close();
+			
+			//支付到商家支付宝
+			if(Constants.ORDER_PAY_METHODS_ALIPAY.equals(order.getPayMethods())){
+				double tradeRate = Double.valueOf(prop.getProperty("alipay.trade.rate"));
+				//调用支付接口
+				//扣除手续费
+				sum = sum * (1 - tradeRate);
+				logger.debug("pay to user total amount:" + sum + " 元");
+				logger.debug("pay to user cashback:" + cashback + " 元");
+				
+				//减去返现金额并四舍五入
+				DecimalFormat df3 = new DecimalFormat("0.000");
+				DecimalFormat df2 = new DecimalFormat("0.00");
+				sum = Math.round(Double.valueOf(df3.format(sum - cashback)) * 100) * 0.01d;
+				logger.debug("pay to user real pay amount: " + sum + " 元");
+
+				String alipayAccount = null; 
+				MtSeller seller = sellerDao.get(order.getSellerId(), MtSeller.class);
+				if(seller != null){
+					MtUserAccount userAccount = userAccountDao.getDefaultAccountByUserId(String.valueOf(seller.getUserInfoId()), Constants.USER_ACCOUNT_CATEGORY_ALIPAY);
+					if(userAccount != null){
+						alipayAccount = userAccount.getAccountName();
+					}
+				}
+				
+				if(!StringUtil.IsNullOrEmpty(alipayAccount)){
+					if(sum > 0.1){
+						boolean ifSuccess = AlipayService.getInstance().transfer(alipayAccount, MD5Util.MD5(String.valueOf(order.hashCode())), Double.valueOf(df2.format(sum)), "完成交易[" + order.getOrderCode() + "]，支付到商家支付宝账户");
+						if(ifSuccess){
+							createPayToSellerLog(operatorId, order, sum);
+							logger.debug("alipay to seller success!");
+						} else {
+							logger.debug("alipay to seller failed!");
+							throw new AlipayApiException("pay to seller error: checkSum error!");
+						}
+					} else if(sum <= 0){
+						throw new Exception("pay to seller error: amount < 0!");
+					} else {
+						//金额小于0.1元则直接存入商家余额
+						createPayToSellerLog(operatorId, order, sum);
+					}
+				} else {
+					throw new AlipayApiException("pay to seller error: seller unbind alipay account!");
+				}
+			} else if(Constants.ORDER_PAY_METHODS_AMOUNT.equals(order.getPayMethods())){
+				//余额支付
+			}  else if(Constants.ORDER_PAY_METHODS_WXPAY.equals(order.getPayMethods())){
+				//微信支付
+			}
+		}
+	}
+
+	/**
+	 * 支付到商家
+	 * @param operatorId
+	 * @param order
+	 * @param sum
+	 */
+	private void createPayToSellerLog(int operatorId, MtOrderInfo order, double sum) {
+		// 创建资金流向
+		for(MtOrderGoods good : order.getOrderGoods()){
+			MtMoneyFlow flow = new MtMoneyFlow();
+			flow.setAmount(sum);
+			flow.setOperateTime(new Date());
+			flow.setOrderGoodsId(Integer.parseInt(good.getId()));
+			flow.setCategory(Constants.MONEY_FLOW_USER_PAY_ORDER);// 分类
+			flow.setDescription("付款到商家");
+			flow.setOperator(order.getUserId());
+			flow.setOrderId(Integer.parseInt(order.getId()));
+			flow.setRemark("付款到商家");
+			flow.setSource(Constants.TRADE_SOURCE_PLATFORM);
+			// target
+			flow.setFroms("商家支付宝账户");
+			flowDao.save(flow);
+			logger.debug("----------create money flow log----------");
+		}
+		
+		MtPlatformCapitalTradeLog pLog = new MtPlatformCapitalTradeLog();
+		pLog.setAmount(-sum);
+		pLog.setOperator(order.getUserId());
+		pLog.setRemark("完成交易[" + order.getOrderCode() + "]，支付到商家支付宝账户");
+		pLog.setSource(Constants.TRADE_SOURCE_PLATFORM);
+		pLog.setTarget("商家支付宝账户");
+		pLog.setTradeTime(new Date());
+		platFormDao.save(pLog);
+		logger.debug("----------create platform trade log----------");
+		
+		if(sum < 0.1){
+			MtSellerAmount am = new MtSellerAmount();
+			am.setAmount(sum);
+			am.setRemark("完成交易[" + order.getOrderCode() + "]，支付到商家余额账户");
+			am.setSellerId(order.getSellerId());
+			am.setSource(Constants.TRADE_SOURCE_PLATFORM);
+			am.setTarget("商家支付宝账户");
+			am.setTradeTime(new Date());
+			sellerAmountDao.save(am);
+		}
+		
+		
+		order.setOrderStatus(Constants.ORDER_STATUS_SUCCESS);
+		order.setStreamStatus(Constants.ORDER_STREAM_STATUS_RECEIVED);
+		order.setReceivedTime(new Date());
+		createOrderLog(order.getId(), operatorId, Constants.ORDER_OPERATE_LOG_RECEIVE, "用户确认收货",null);
+	}
+
+	/**
+	 * 订单详情
+	 */
+	@Override
+	public Map<String, Object> getOrderDetail(String orderId) {
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+
+		result.put("orders", order);
+
+		List<MtOrderSellerPojo> sellerList = new ArrayList<MtOrderSellerPojo>();
+
+		List<MtOrderGoods> goodsList = new ArrayList<MtOrderGoods>();
+
+		double sum = 0.0;
+
+		List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+		if (orderGoods != null && orderGoods.size() > 0) {
+			for (MtOrderGoods good : orderGoods) {
+
+				MtSeller seller = sellerDao.get(good.getSellerId(), MtSeller.class);
+
+				if (seller != null) {
+					MtOrderSellerPojo sellerPojo = new MtOrderSellerPojo(seller.getId(), seller.getName(), Integer.parseInt(order.getId()), seller.getLogo());
+					if (!checkSellerExist(sellerList, sellerPojo)) {
+						sellerList.add(sellerPojo);
+					}
+				}
+
+				if (good.getRate() == 0 || good.getRate() == 1) {
+					sum += (good.getPrice() + good.getPostage()) * good.getNumber();
+				} else {
+					sum += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+				}
+
+				// 计算显示抢购
+				if (good.getPanicId() > 0) {
+					MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+					sum -= panic.getConcessionalRate() * good.getNumber();
+				}
+				
+				good.setSubtotal(sum);
+				
+				goodsList.add(good);
+			}
+		}
+
+		order.setSum(sum);
+
+		result.put("sellerList", sellerList);
+
+		result.put("goodsList", goodsList);
+
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> getOrderDetailByCode(String code) {
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		MtOrderInfo order = orderDao.getOrderByCode(code);
+
+		result.put("orders", order);
+
+		List<MtOrderSellerPojo> sellerList = new ArrayList<MtOrderSellerPojo>();
+
+		List<MtOrderGoods> goodsList = new ArrayList<MtOrderGoods>();
+
+		double sum = 0.0;
+
+		List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+		if (orderGoods != null && orderGoods.size() > 0) {
+			for (MtOrderGoods good : orderGoods) {
+
+				MtSeller seller = sellerDao.get(good.getSellerId(), MtSeller.class);
+
+				if (seller != null) {
+					MtOrderSellerPojo sellerPojo = new MtOrderSellerPojo(seller.getId(), seller.getName(), Integer.parseInt(order.getId()), seller.getLogo());
+					if (!checkSellerExist(sellerList, sellerPojo)) {
+						sellerList.add(sellerPojo);
+					}
+				}
+
+				if (good.getRate() == 0 || good.getRate() == 1) {
+					sum += (good.getPrice() + good.getPostage()) * good.getNumber();
+				} else {
+					sum += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+				}
+
+				// 计算显示抢购
+				if (good.getPanicId() > 0) {
+					MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+					sum -= panic.getConcessionalRate() * good.getNumber();
+				}
+				goodsList.add(good);
+			}
+		}
+
+		order.setSum(sum);
+
+		result.put("sellerList", sellerList);
+
+		result.put("goodsList", goodsList);
+
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> getOrderByIds(String[] ids) {
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		List<MtOrderInfo> orderList = orderDao.getOrderByIds(ids);
+
+		result.put("orders", orderList);
+
+		List<MtOrderSellerPojo> sellerList = new ArrayList<MtOrderSellerPojo>();
+
+		List<MtOrderGoods> goodsList = new ArrayList<MtOrderGoods>();
+		createOrderPojo(orderList, sellerList, goodsList);
+		result.put("sellerList", sellerList);
+
+		result.put("goodsList", goodsList);
+
+		return result;
+	}
+
+	/**
+	 * 余额支付
+	 */
+	@Override
+	public String payOrderByAccount(String[] orderIds, String userId) {
+
+		double amount = userTradeDao.getUserBalance(userId);
+
+		if (orderIds != null && orderIds.length > 0) {
+			double total = 0.0;
+			List<MtOrderInfo> orderList = orderDao.getOrderByIds(orderIds);
+			for (MtOrderInfo order : orderList) {
+				List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+				if (orderGoods != null && orderGoods.size() > 0) {
+					for (MtOrderGoods good : orderGoods) {
+						if (good.getRate() == 0 || good.getRate() == 1) {
+							total += (good.getPrice() + good.getPostage()) * good.getNumber();
+						} else {
+							total += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+						}
+
+						// 计算显示抢购
+						if (good.getPanicId() > 0) {
+							MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+							total -= panic.getConcessionalRate() * good.getNumber();
+						}
+					}
+				}
+			}
+			//判断余额是否充足
+			if (total <= amount) {
+				for (MtOrderInfo order : orderList) {
+					List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+					if (orderGoods != null && orderGoods.size() > 0) {
+						for (MtOrderGoods good : orderGoods) {
+							double sum = 0.0;
+							if (good.getRate() == 0 || good.getRate() == 1) {
+								sum += (good.getPrice() + good.getPostage()) * good.getNumber();
+							} else {
+								sum += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+							}
+							// 计算显示抢购
+							if (good.getPanicId() > 0) {
+								MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+								sum -= panic.getConcessionalRate() * good.getNumber();
+							}
+							createOrderTradeLogWithUserAccount(order, good, sum);
+						}
+
+						// 修改订单状态
+						order.setPayMethods(Constants.ORDER_PAY_METHODS_AMOUNT);
+						order.setPayStatus(Constants.ORDER_PAY_STATUS_PAID);
+						orderDao.update(order);
+
+						// 创建订单操作日志
+						createOrderLog(order.getId(), Integer.parseInt(userId), Constants.ORDER_OPERATE_LOG_PAY, "用户支付订单",null);
+
+					}
+				}
+				return "success";
+			} else {
+				return "支付失败:余额不足！";
+			}
+		}
+
+		return "支付失败";
+	}
+
+	/**
+	 * 支付宝支付
+	 */
+	@Override
+	public void payOrderByAlipay(String[] orderCodes, Map<String, String> params) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		if (orderCodes != null && orderCodes.length > 0) {
+			List<MtOrderInfo> orderList = orderDao.getOrderByCodes(orderCodes);
+			for (MtOrderInfo order : orderList) {
+				List<MtOrderGoods> orderGoods = orderGoodsDao.getOrderGoodsByOrderId(Integer.parseInt(order.getId()));
+				if (orderGoods != null && orderGoods.size() > 0) {
+					for (MtOrderGoods good : orderGoods) {
+						double sum = 0.0;
+						if (good.getRate() == 0 || good.getRate() == 1) {
+							sum += (good.getPrice() + good.getPostage()) * good.getNumber();
+						} else {
+							sum += (good.getPrice() * good.getRate() + good.getPostage()) * good.getNumber();
+						}
+
+						// 计算显示抢购
+						if (good.getPanicId() > 0) {
+							MtPanicBuying panic = panicDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+							sum -= panic.getConcessionalRate() * good.getNumber();
+						}
+						createOrderTradeLogWithAlipay(order, good, sum);
+
+					}
+
+					order.setPayMethods(Constants.ORDER_PAY_METHODS_ALIPAY);
+					// 修改订单状态
+					order.setPayStatus(Constants.ORDER_PAY_STATUS_PAID);
+					if (params != null && params.containsKey("gmt_payment")) {
+						try {
+							order.setPaiedTime(sdf.parse(params.get("gmt_payment")));
+						} catch (ParseException e) {
+							logger.error("parse gmt_payment error!!! use system time!");
+							order.setPaiedTime(new Date());
+						}
+					} else {
+						order.setPaiedTime(new Date());
+					}
+					orderDao.update(order);
+					logger.debug("----------update order status----------");
+
+					// 创建订单操作日志
+					createOrderLog(order.getId(), order.getUserId(), Constants.ORDER_OPERATE_LOG_PAY, "用户支付订单",null);
+
+				}
+			}
+		}
+	}
+
+	/**
+	 * 余额支付
+	 * 
+	 * @param order
+	 * @param good
+	 * @param sum
+	 */
+	private void createOrderTradeLogWithUserAccount(MtOrderInfo order, MtOrderGoods good, double sum) {
+		MtUserAccountTradeLog tradeLog = new MtUserAccountTradeLog();
+		tradeLog.setAmount(-sum);
+		tradeLog.setOperator(order.getUserId());
+		tradeLog.setRemark("余额支付订单");
+		tradeLog.setSource(Constants.TRADE_SOURCE_USER_ACCOUNT);
+		tradeLog.setTarget("订单--" + order.getId());
+		tradeLog.setTradeTime(new Date());
+		tradeLog.setUserId(order.getUserId());
+		userTradeDao.save(tradeLog);
+		logger.debug("----------create user trade log----------");
+
+		// 创建资金流向
+		MtMoneyFlow flow = new MtMoneyFlow();
+		flow.setAmount(sum);
+		flow.setOperateTime(new Date());
+		flow.setOrderGoodsId(Integer.parseInt(good.getId()));
+		flow.setCategory(Constants.MONEY_FLOW_USER_PAY_ORDER);// 分类
+		flow.setDescription("余额支付订单");
+		flow.setOperator(order.getUserId());
+		flow.setOrderId(Integer.parseInt(order.getId()));
+		flow.setRemark("支付订单");
+		flow.setSource(Constants.TRADE_SOURCE_USER_ACCOUNT);
+		// target
+		flow.setFroms("订单--" + order.getId());
+		flowDao.save(flow);
+		logger.debug("----------create money flow log----------");
+
+		// 创建平台交易记录
+		MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+		log.setAmount(sum);
+		log.setOperator(order.getUserId());
+		log.setRemark("用户支付订单");
+		log.setSource(Constants.TRADE_SOURCE_USER_ACCOUNT);
+		log.setTarget("订单--" + order.getId());
+		log.setTradeTime(new Date());
+		log.setUserMoneyFlowId(Integer.parseInt(flow.getId()));
+		platFormDao.save(log);
+		logger.debug("----------create platform trade log----------");
+	}
+
+	/**
+	 * 支付宝支付数据处理
+	 * 
+	 * @param order
+	 * @param good
+	 * @param sum
+	 */
+	private void createOrderTradeLogWithAlipay(MtOrderInfo order, MtOrderGoods good, double sum) {
+
+		// 创建资金流向
+		MtMoneyFlow flow = new MtMoneyFlow();
+		flow.setAmount(sum);
+		flow.setOperateTime(new Date());
+		flow.setOrderGoodsId(Integer.parseInt(good.getId()));
+		flow.setCategory(Constants.MONEY_FLOW_USER_PAY_ORDER);// 分类
+		flow.setDescription("支付宝支付订单");
+		flow.setOperator(order.getUserId());
+		flow.setOrderId(Integer.parseInt(order.getId()));
+		flow.setRemark("支付订单");
+		flow.setSource(Constants.TRADE_SOURCE_ALIPAY);
+		// target
+		flow.setFroms("订单--" + order.getId());
+		flowDao.save(flow);
+		logger.debug("----------create money flow log----------");
+
+		// 创建平台交易记录
+		MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+		log.setAmount(sum);
+		log.setOperator(order.getUserId());
+		log.setRemark("用户支付订单");
+		log.setSource(Constants.TRADE_SOURCE_ALIPAY);
+		log.setTarget("订单--" + order.getId());
+		log.setTradeTime(new Date());
+		log.setUserMoneyFlowId(Integer.parseInt(flow.getId()));
+		platFormDao.save(log);
+		logger.debug("----------create platform trade log----------");
+	}
+	
+	@Override
+	public Pagination<MtOrderInfo> getOrderListBySellerId(String sellerId,
+			int page, int rows) {
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtOrderInfo.class);
+		dc.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+		dc.addOrder(Order.desc("createTime"));
+
+		//result.setData(service.getWithPagination(dc, page, rows, "id"));
+		return this.getWithPagination(dc, page, rows, "id");
+	}
+
+	@Override
+	public Map<String, Object> getOrderBySellerUserId(String userId, int page, int rows, Map<String,Object> params) {
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		DetachedCriteria dc = DetachedCriteria.forClass(MtOrderInfo.class);
+
+		if (params.containsKey("params") && !StringUtil.IsNullOrEmpty(params.get("params").toString())) {
+			if ("readyShipped".equals(params.get("params"))) {
+				// 待发货
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_NORMAL));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_READY_SHIPPED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO));// 订单是否发生过退货
+			} else if ("returnOfGoods".equals(params.get("params"))) {
+				// 待退货
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_RECEIVED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_YES));// 订单是否发生过退货
+			} else if ("readyReceive".equals(params.get("params"))) {
+				// 待收货
+				dc.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+				dc.add(Property.forName("payStatus").eq(Constants.ORDER_PAY_STATUS_PAID));
+				dc.add(Property.forName("streamStatus").eq(Constants.ORDER_STREAM_STATUS_SHIPPED));
+				dc.add(Property.forName("ifReturnGoods").eq(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_YES));// 订单是否发生过退货
+			} 
+		}
+		
+		DetachedCriteria sellerCri = DetachedCriteria.forClass(MtSeller.class);
+		sellerCri.setProjection(Property.forName("id"));
+
+		sellerCri.add(Property.forName("userInfoId").eq(Integer.parseInt(userId)));
+		
+		dc.add(Property.forName("sellerId").in(sellerCri));
+
+		Pagination<MtOrderInfo> pagination = orderDao.findByPagination(dc, page, rows, Order.desc("createTime"));
+
+		List<MtOrderInfo> orderList = pagination.getData();
+
+		result.put("orders", pagination);
+
+		List<MtOrderSellerPojo> sellerList = new ArrayList<MtOrderSellerPojo>();
+
+		List<MtOrderGoods> goodsList = new ArrayList<MtOrderGoods>();
+
+		createOrderPojo(orderList, sellerList, goodsList);
+
+		result.put("sellerList", sellerList);
+
+		result.put("goodsList", goodsList);
+
+		return result;
+	}
+
+}

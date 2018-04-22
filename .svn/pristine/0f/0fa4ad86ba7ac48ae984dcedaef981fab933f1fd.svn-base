@@ -1,0 +1,102 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSecondLevelCategory;
+import com.xt.ptus.mt.service.MtSecondLevelCategoryService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "/mt/mtSecondLevelCategory/")
+public class MtSecondLevelCategoryController extends BaseController<MtSecondLevelCategory> {
+	
+	private static Logger logger = Logger.getLogger(MtSecondLevelCategoryController.class);
+	
+	@Resource
+	private MtSecondLevelCategoryService service;
+	
+	
+	@ResponseBody
+	@RequestMapping("listNormalSellerCategory")
+	public Result listNormalIntegrateGoods(HttpServletRequest request){
+		Result result = new Result();
+		
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			
+			DetachedCriteria dc = DetachedCriteria.forClass(MtSecondLevelCategory.class);
+			dc.add(Property.forName("sellerId").eq(Integer.parseInt(params.get("sellerId").toString())));
+			result.setData(service.getWithPagination(dc, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	
+	
+	
+	/**
+	 * 通过Id获取分类
+	 */
+	@ResponseBody
+	@RequestMapping("getCategoryById")
+	public Result getCategoryById(@RequestParam("id")String id){
+		Result result = new Result();
+		
+		try {
+			result.setData(service.getCategoryById(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	//通过sellerId获取商家二级分类
+	@ResponseBody
+	@RequestMapping("getCategoryBySellerId")
+	public Result getDataBySellerId(@RequestParam("sellerId") String sellerId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getDataBySellerId(sellerId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

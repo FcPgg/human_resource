@@ -1,0 +1,87 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.controller.mobile.MtMessageContentsControllerMobile;
+import com.xt.ptus.mt.entity.MtMessageContents;
+import com.xt.ptus.mt.service.MtMessageContentsService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "/mt/mtMessageContents/")
+public class MtMessageContentsController extends BaseController<MtMessageContents> {
+	
+	@Resource
+	private MtMessageContentsService service;
+	
+	private static Logger logger = Logger.getLogger(MtMessageContentsControllerMobile.class);
+	
+	/**
+	 * 创建记录
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("addContents")
+	private Result addContents(HttpServletRequest request){
+		Result result = new Result();
+
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			MtMessageContents content = service.addContents(params); 
+			result.setData(service.get(content.getId()));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取当前会话聊天记录
+	 * @param source 来源
+	 * @param target 目标
+	 * @param page 页码
+	 * @param rows 行数
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getContents")
+	private Result getContents(@RequestParam("source") String source, @RequestParam("target") String target, @RequestParam("page")String page, @RequestParam("rows")String rows){
+		Result result = new Result();
+		
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页数据转换异常，使用默认分页数据");
+		}
+
+		try {
+			result.setData(service.getContentByConversationId(source, target, pager, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

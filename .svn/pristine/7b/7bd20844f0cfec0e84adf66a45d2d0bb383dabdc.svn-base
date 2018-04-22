@@ -1,0 +1,29 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.CriteriaSpecification;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.dao.MtSellerGalleryDao;
+
+@Repository
+public class MtSellerGalleryDaoImpl extends BaseDaoImpl<MtSellerGallery> implements MtSellerGalleryDao{
+
+	@Override
+	public List<MtSellerGallery> getGalleryBySellerId(String sellerId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSellerGallery.class);
+		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+	//	criteria.add(Restrictions.gt("sort","1"));
+		List gallery = criteria.list();
+		return gallery;
+	}
+
+
+}

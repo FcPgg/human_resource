@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtSellerAttachment;
+import com.xt.ptus.mt.dao.MtSellerAttachmentDao;
+
+@Repository
+public class MtSellerAttachmentDaoImpl extends BaseDaoImpl<MtSellerAttachment> implements MtSellerAttachmentDao{
+
+}

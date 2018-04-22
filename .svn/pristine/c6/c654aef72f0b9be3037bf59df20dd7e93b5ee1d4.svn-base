@@ -1,0 +1,345 @@
+package com.xt.ptus.alipay.service;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.junit.Test;
+
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.AlipayClient;
+import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.domain.AlipayFundTransOrderQueryModel;
+import com.alipay.api.domain.AlipayFundTransToaccountTransferModel;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.AlipayFundTransOrderQueryRequest;
+import com.alipay.api.request.AlipayFundTransToaccountTransferRequest;
+import com.alipay.api.response.AlipayFundTransOrderQueryResponse;
+import com.alipay.api.response.AlipayFundTransToaccountTransferResponse;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.service.MtIntegrateService;
+import com.xt.ptus.mt.service.MtOrderInfoService;
+import com.xt.ptus.mt.service.MtSellerSettledApplyService;
+import com.xt.ptus.mt.service.MtUserAccountTradeLogService;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.StringUtil;
+
+/**
+ * 支付宝支付
+ * @author Administrator
+ *
+ */
+public class AlipayService {
+	
+	private static Logger logger = Logger.getLogger(AlipayService.class);
+
+	private static String PAY_URL = "https://openapi.alipay.com/gateway.do";
+	
+	//支付宝支付公钥(移动端)
+	private String PUBLIC_KEY_MOBILE;
+	
+	private static final String CHARSET = "utf-8";
+	
+	//支付宝账户支付用户真实名称
+	private static String PAYER_REAL_NAME;
+	
+	private static AlipayService instance;
+
+	private static AlipayClient alipayClient;
+
+	public AlipayService() throws IOException {
+		
+		InputStream is = this.getClass().getResourceAsStream("/alipay.properties");
+		Properties prop = new Properties();
+		prop.load(is);
+		is.close();
+		
+		PAY_URL =  prop.getProperty("alipay_gatewayUrl_pc");
+		PAYER_REAL_NAME = prop.getProperty("alipay.sellerName");
+		this.PUBLIC_KEY_MOBILE = prop.getProperty("alipay.publicKey");
+		
+		alipayClient = new DefaultAlipayClient(PAY_URL, prop.getProperty("alipay.appId"), prop.getProperty("alipay.privateKeyPkcs"), "json", "utf-8", prop.getProperty("alipay_public_key_pc"), "RSA");
+	}
+
+	public static AlipayService getInstance() throws IOException {
+		if (instance == null)
+			instance = new AlipayService();
+		return instance;
+	}
+
+	/**
+	 * 提现到个人支付宝
+	 * @param targetAlipayUser 商家支付宝账户
+	 * @param outBizNo 订单号
+	 * @param totalAmount 总金额，最小金额为0.10元
+	 * @param cashback 返现金额(由于返现金额需要从商家交易中扣除，故此传递) required = false
+	 * @param description 交易描述
+	 * @return
+	 * @throws AlipayApiException
+	 */
+	public boolean transfer(String targetAlipayUser, String outBizNo, double totalAmount, String description) throws AlipayApiException {
+		if(StringUtil.IsNullOrEmpty(targetAlipayUser) || 
+				StringUtil.IsNullOrEmpty(outBizNo) || 
+				StringUtil.IsNullOrEmpty(outBizNo) || 
+				totalAmount < 0.1){
+			return false;
+		}
+		
+		AlipayFundTransToaccountTransferModel model = new AlipayFundTransToaccountTransferModel();
+        model.setOutBizNo(outBizNo);//生成订单号
+        model.setPayeeType("ALIPAY_LOGONID");//固定值
+        model.setPayeeAccount(targetAlipayUser);//转账收款账户
+        model.setAmount(String.valueOf(totalAmount));
+        model.setPayerRealName(PAYER_REAL_NAME);//账户真实名称
+        model.setRemark(description);
+		
+		
+		AlipayFundTransToaccountTransferResponse response = transferToResponse(model);
+		String result = response.getBody();
+		logger.info("transfer result>" + result);
+		if (response.isSuccess()) {
+			return true;
+		} else {
+			// 调用查询接口查询数据
+			Gson gson = new Gson();
+			Map<String, String> params = gson.fromJson(result, new TypeToken<Map<String, String>>() {}.getType());
+			logger.info(params);
+			String out_biz_no = params.get("alipay_fund_trans_toaccount_transfer_response");
+			AlipayFundTransOrderQueryModel queryModel = new AlipayFundTransOrderQueryModel();
+			model.setOutBizNo(out_biz_no);
+			boolean isSuccess = transferQuery(queryModel);
+			if (isSuccess) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static AlipayFundTransToaccountTransferResponse transferToResponse(AlipayFundTransToaccountTransferModel model) throws AlipayApiException{
+		AlipayFundTransToaccountTransferRequest request = new AlipayFundTransToaccountTransferRequest();
+		request.setBizModel(model);
+		return alipayClient.execute(request);
+	}
+
+	/**
+	 * 转账查询接口
+	 * 
+	 * @param content
+	 * @return
+	 * @throws AlipayApiException
+	 */
+	private static boolean transferQuery(AlipayFundTransOrderQueryModel model) throws AlipayApiException {
+		AlipayFundTransOrderQueryResponse response = transferQueryToResponse(model);
+		logger.info("transferQuery result>" + response.getBody());
+		if (response.isSuccess()) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * 执行alipay操作，接收响应
+	 * @param model
+	 * @return
+	 * @throws AlipayApiException
+	 */
+	private static AlipayFundTransOrderQueryResponse transferQueryToResponse(AlipayFundTransOrderQueryModel model) throws AlipayApiException {
+		AlipayFundTransOrderQueryRequest request = new AlipayFundTransOrderQueryRequest();
+		request.setBizModel(model);
+		return alipayClient.execute(request);
+	}
+	
+	public boolean alipayOrderMobile(Map<String, String> params, String outTradeNo, String tradeStatus, MtOrderInfoService orderService) throws AlipayApiException {
+		boolean verifyResult = AlipaySignature.rsaCheckV1(params, this.PUBLIC_KEY_MOBILE, CHARSET);
+		logger.debug("---------alipay verifyResult : " + verifyResult + "----------------");
+		
+		if (verifyResult) {
+			if (!StringUtil.IsNullOrEmpty(outTradeNo)) {
+				String[] orderIds = outTradeNo.split(",");
+				//
+				double totalFee = 0.0;
+				for (String code : orderIds) {
+					MtOrderInfo order = (MtOrderInfo) orderService.getOrderDetailByCode(code).get("orders");
+					if (order != null) {
+						totalFee += order.getSum();
+					}
+				}
+				double totalAmount = Double.parseDouble(params.get("total_fee"));
+
+				// 比对支付总价与商品总价是否相同
+				if (totalFee == totalAmount) {
+					// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以上仅供参考)//
+					// 计算得出通知验证结果
+					// boolean AlipaySignature.rsaCheckV1(Map<String,
+					// String> params, String
+					// publicKey, String charset, String sign_type)
+
+					if (tradeStatus.equals("TRADE_FINISHED") || tradeStatus.equals("TRADE_SUCCESS")) {
+						// 判断该笔订单是否在商户网站中已经做过处理
+						// 如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+						// 请务必判断请求时的total_fee、seller_id与通知时获取的total_fee、seller_id为一致的
+						// 如果有做过处理，不执行商户的业务程序
+
+						// 注意：
+						// 如果签约的是可退款协议，退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+						// 如果没有签约可退款协议，那么付款完成后，支付宝系统发送该交易状态通知。
+						try {
+							logger.debug("----------begin alipay----------");
+							orderService.payOrderByAlipay(orderIds, params);
+							logger.debug("----------end alipay----------");
+
+							logger.debug("AlipayPayStatus: pay order success!!!!");
+							return true;
+						} catch (Exception e) {
+							logger.error(e);
+						}
+					}
+				} else {
+					logger.error("AlipayPayError: pay fee is diffrent with order fee:" + "{totalAmount:" + totalAmount + ",orderFee:" + totalFee);
+				}
+			} else {// 验证失败
+				logger.error("AlipayPayError: outTradeNo is null!!!");
+			}
+		} else {
+			logger.debug("---------alipay verify request unpassed! : " + verifyResult + "----------------");
+		}
+		return false;
+	}
+	
+	/**
+	 * 购买e币
+	 * @param params
+	 * @param outTradeNo
+	 * @param tradeStatus
+	 * @param integrateService
+	 * @return
+	 * @throws AlipayApiException
+	 */
+	public boolean buyIntegrate(Map<String, String> params, String outTradeNo, String tradeStatus, MtIntegrateService integrateService) throws AlipayApiException {
+		boolean verifyResult = AlipaySignature.rsaCheckV1(params, this.PUBLIC_KEY_MOBILE, CHARSET);
+		logger.debug("---------alipay verifyResult : " + verifyResult + "----------------");
+		
+		if (verifyResult) {
+			if (!StringUtil.IsNullOrEmpty(outTradeNo)) {
+				if (tradeStatus.equals("TRADE_FINISHED") || tradeStatus.equals("TRADE_SUCCESS")) {
+					// 判断该笔订单是否在商户网站中已经做过处理
+					// 如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+					// 请务必判断请求时的total_fee、seller_id与通知时获取的total_fee、seller_id为一致的
+					// 如果有做过处理，不执行商户的业务程序
+
+					// 注意：
+					// 如果签约的是可退款协议，退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+					// 如果没有签约可退款协议，那么付款完成后，支付宝系统发送该交易状态通知。
+					double totalAmount = Double.parseDouble(params.get("total_fee"));
+					int amount = (new   Double(totalAmount)).intValue();  
+					logger.debug("----------buy count----------" + totalAmount);
+					return integrateService.buyIntegrateByAlipay(outTradeNo, amount * 10);
+				}
+			} else {// 验证失败
+				logger.error("AlipayPayError: outTradeNo is null!!!");
+			}
+		} else {
+			logger.debug("---------alipay verify request unpassed! : " + verifyResult + "----------------");
+		}
+		return false;
+	}
+	
+	/**
+	 * 移动端充值余额
+	 * @param params
+	 * @param outTradeNo
+	 * @param tradeStatus
+	 * @param service
+	 * @return
+	 * @throws AlipayApiException
+	 */
+	public boolean rechargeBalance(Map<String, String> params, String outTradeNo, String tradeStatus, MtUserAccountTradeLogService service) throws AlipayApiException {
+		boolean verifyResult = AlipaySignature.rsaCheckV1(params, this.PUBLIC_KEY_MOBILE, CHARSET);
+		logger.debug("---------alipay verifyResult : " + verifyResult + "----------------");
+		
+		if (verifyResult) {
+			if (!StringUtil.IsNullOrEmpty(outTradeNo)) {
+				if (tradeStatus.equals("TRADE_FINISHED") || tradeStatus.equals("TRADE_SUCCESS")) {
+					// 判断该笔订单是否在商户网站中已经做过处理
+					// 如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+					// 请务必判断请求时的total_fee、seller_id与通知时获取的total_fee、seller_id为一致的
+					// 如果有做过处理，不执行商户的业务程序
+
+					// 注意：
+					// 如果签约的是可退款协议，退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+					// 如果没有签约可退款协议，那么付款完成后，支付宝系统发送该交易状态通知。
+					double totalAmount = Double.parseDouble(params.get("total_fee"));
+					int amount = (new   Double(totalAmount)).intValue();  
+					logger.debug("----------recharge count----------" + totalAmount);
+					return service.rechargeBalanceByAlipay(outTradeNo, amount);
+				}
+			} else {// 验证失败
+				logger.error("AlipayPayError: outTradeNo is null!!!");
+			}
+		} else {
+			logger.debug("---------alipay verify request unpassed! : " + verifyResult + "----------------");
+		}
+		return false;
+	}
+	
+	/**
+     * 单笔转账到支付宝账户
+     * https://doc.open.alipay.com/docs/doc.htm?spm=a219a.7629140.0.0.54Ty29&treeId=193&articleId=106236&docType=1
+     */
+	@Test
+    public void transferTest() {
+		boolean isSuccess = false;
+        try {
+            isSuccess = AlipayService.getInstance().transfer("752955902@qq.com", MD5Util.MD5((new Date().toString())),0.1, "测试支付");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(isSuccess);
+    }
+
+	/**
+	 * 移动端支付入驻费
+	 * @param params
+	 * @param replace
+	 * @param tradeStatus
+	 * @param integrateService
+	 * @return
+	 * @throws AlipayApiException 
+	 */
+	public boolean paySettlementFee(Map<String, String> params, String outTradeNo, String tradeStatus, MtSellerSettledApplyService service) throws AlipayApiException {
+		boolean verifyResult = AlipaySignature.rsaCheckV1(params, this.PUBLIC_KEY_MOBILE, CHARSET);
+		logger.debug("---------alipay verifyResult : " + verifyResult + "----------------");
+		
+		if (verifyResult) {
+			if (!StringUtil.IsNullOrEmpty(outTradeNo)) {
+				if (tradeStatus.equals("TRADE_FINISHED") || tradeStatus.equals("TRADE_SUCCESS")) {
+					// 判断该笔订单是否在商户网站中已经做过处理
+					// 如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+					// 请务必判断请求时的total_fee、seller_id与通知时获取的total_fee、seller_id为一致的
+					// 如果有做过处理，不执行商户的业务程序
+
+					// 注意：
+					// 如果签约的是可退款协议，退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+					// 如果没有签约可退款协议，那么付款完成后，支付宝系统发送该交易状态通知。
+					double totalAmount = Double.parseDouble(params.get("total_fee"));
+
+					logger.debug("----------settlement fee count----------" + totalAmount);
+					return service.paySettlementFeeByAlipay(outTradeNo, totalAmount);
+				}
+			} else {// 验证失败
+				logger.error("AlipayPayError: outTradeNo is null!!!");
+			}
+		} else {
+			logger.debug("---------alipay verify request unpassed! : " + verifyResult + "----------------");
+		}
+		return false;
+	}
+}

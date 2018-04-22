@@ -1,0 +1,119 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtUserPublishInfoAttsDao;
+import com.xt.ptus.mt.dao.MtUserPublishInfoDao;
+import com.xt.ptus.mt.dao.MtUserPublishInfoPropsDao;
+import com.xt.ptus.mt.dao.MtUserReadLogDao;
+import com.xt.ptus.mt.entity.MtUserPublishInfo;
+import com.xt.ptus.mt.entity.MtUserPublishInfoAtts;
+import com.xt.ptus.mt.entity.MtUserPublishInfoProps;
+import com.xt.ptus.mt.entity.MtUserReadLog;
+import com.xt.ptus.mt.service.MtUserPublishInfoService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtUserPublishInfoServiceImpl extends BaseServiceImpl<MtUserPublishInfo> implements MtUserPublishInfoService{
+	
+	@Autowired
+	private MtUserPublishInfoDao publishDao;
+	
+	@Autowired
+	private MtUserPublishInfoPropsDao propsDao;
+	
+	@Autowired
+	private MtUserPublishInfoAttsDao attsDao;
+	
+	@Autowired
+	private MtUserReadLogDao logDao;
+	
+	@Override
+	public void beforeInsert(MtUserPublishInfo t) {
+		t.setPublishTime(new Date());
+	}
+	
+	@Override
+	public void beforeUpdate(MtUserPublishInfo t) {
+		t.setUpdateTime(new Date());
+	}
+	
+	@Override
+	public void afterUpdate(MtUserPublishInfo t) {
+		if(t.getProps() != null && t.getProps().size() > 0){
+			propsDao.clearProps(t.getId());
+			for(MtUserPublishInfoProps prop : t.getProps()){
+				if(!StringUtil.IsNullOrEmpty(prop.getId()) && Integer.parseInt(prop.getId()) > 0){
+					propsDao.update(prop);
+				} else {
+					prop.setInfoId(Integer.parseInt(t.getId()));
+					propsDao.save(prop);
+				}
+			}
+		}
+		
+		if(t.getAtts() != null && t.getAtts().size() > 0){
+			attsDao.clearAttsByInfoId(t.getId());
+			for(MtUserPublishInfoAtts att : t.getAtts()){
+				if(!StringUtil.IsNullOrEmpty(att.getId()) && Integer.parseInt(att.getId()) > 0){
+					attsDao.update(att);
+				} else {
+					att.setInfoId(Integer.parseInt(t.getId()));
+					attsDao.save(att);
+				}
+			}
+		}
+	}
+
+	@Override
+	public Pagination<MtUserPublishInfo> getRecommendsInfo(int page, int rows) {
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserPublishInfo.class);
+		
+		return publishDao.findByPagination(dc, page, rows, Order.desc("publishTime"));
+	}
+
+	@Override
+	public MtUserPublishInfo getInfoDetail(String id, String userId) {
+		MtUserPublishInfo info = this.get(id);
+		if(info != null){
+			info.setProps(propsDao.getPropsByInfoId(id));
+			info.setAtts(attsDao.getAttsByInfoId(id));
+
+			if(!StringUtil.IsNullOrEmpty(userId)){
+				MtUserReadLog log = new MtUserReadLog();
+				log.setInfoId(Integer.parseInt(info.getId()));
+				log.setReadTime(new Date());
+				log.setUserId(Integer.parseInt(userId));
+				logDao.save(log);
+			}
+		}
+		return info;
+	}
+
+	@Override
+	public Pagination<MtUserPublishInfo> getInfoByCategoryId(int page, int rows, String categoryId) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserPublishInfo.class);
+		
+		dc.add(Property.forName("categoryId").eq(Integer.parseInt(categoryId)));
+		
+		return publishDao.findByPagination(dc, page, rows, Order.desc("publishTime"));
+	}
+
+	@Override
+	public Pagination<MtUserPublishInfo> getInfoByUserId(int pager, int rows, String userId) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserPublishInfo.class);
+		
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		return publishDao.findByPagination(dc, pager, rows, Order.desc("publishTime"));
+	}
+}

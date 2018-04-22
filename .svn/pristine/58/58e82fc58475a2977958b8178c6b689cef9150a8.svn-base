@@ -1,0 +1,120 @@
+package com.xt.ptus.mt.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.helper.HttpServletRequestHelper;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.mt.service.MtPanicBuyingService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "mt/panicBuying")
+public class MtPanicBuyingController extends BaseController<MtPanicBuying> {
+	
+	private static Logger logger = Logger.getLogger(MtGoodsController.class);
+	
+	@Resource
+	private MtPanicBuyingService service;
+	
+    @InitBinder  
+    public void initBinder(WebDataBinder binder) {  
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");  
+        dateFormat.setLenient(false);  
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));//true:允许输入空值，false:不能为空值  
+    }  
+	
+	/**
+	 * 限时抢商品
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("listNormalPanicBuying")
+	@ResponseBody
+	public Result listNormalPanicBuying(HttpServletRequest request){
+	
+		Result result = new Result();
+
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                   
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			DetachedCriteria dc = DetachedCriteria.forClass(MtPanicBuying.class);
+			dc.addOrder(Order.desc("createTime"));
+			result.setData(service.getWithPagination(dc, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 更新限时抢
+	 */
+	@ResponseBody
+	@RequestMapping("updatePanicBuying")
+	public Result updatePanicBuying(HttpServletRequest request,MtPanicBuying panicBuying){		
+     Result result = new Result();
+     
+	try {
+		service.updatePanicBuying(panicBuying, HttpServletRequestHelper.getCurrentUser(request).getId());
+		result.setSuccess(true);
+	} catch (Exception e) {
+		result.setSuccess(false);
+		result.setMessage("操作失败");
+		result.setError(e.getMessage());
+		logger.error(e);
+	}
+	return result;
+		
+	}
+	
+	/**
+	 * 通过id获取限时抢详情
+	 */
+	@RequestMapping("getPaincBuyingInfoById")
+	@ResponseBody
+	public Result getPaincBuyingInfoById(@RequestParam("id")String id){
+	  Result result = new Result();
+	     
+		try {
+			result.setData(service.getPaincBuyingInfoById(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+}

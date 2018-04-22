@@ -1,0 +1,18 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtSignIn;
+import com.xt.ptus.mt.service.MtSignInService;
+
+@Service
+public class MtSignInServiceImpl extends BaseServiceImpl<MtSignIn> implements MtSignInService{
+	
+	@Override
+	public void beforeInsert(MtSignIn t) {
+		t.setCreateTime(new Date());
+	}
+}

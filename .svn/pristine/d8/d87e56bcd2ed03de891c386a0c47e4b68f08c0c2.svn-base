@@ -1,0 +1,42 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtMaterialCatalog;
+import com.xt.ptus.mt.service.MtMaterialCatalogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mtMaterialCatalog/")
+public class MtMaterialCatalogController extends BaseController<MtMaterialCatalog> {
+	
+	private static Logger logger = Logger.getLogger(MtMaterialCatalogController.class);
+	
+	@Resource
+	private MtMaterialCatalogService service;
+	
+	@ResponseBody
+	@RequestMapping("getMaterialCatalogBySellerId")
+	public Result getMaterialCatalogBySellerId(@RequestParam("sellerId") String sellerId, HttpServletRequest request){
+		Result result = new Result();
+		
+		try {
+			result.setData(service.getMaterialCatalogBySellerId(sellerId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setMessage("获取目录失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+}

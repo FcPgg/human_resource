@@ -1,0 +1,378 @@
+package com.xt.ptus.mt.pojo;
+
+import java.util.List;
+
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+
+public class MtSellerPojo {
+
+	private String id;
+
+	private String name;
+
+	/**
+	 * 分类ID
+	 */
+	private int categoryId;
+
+	/**
+	 * 简介
+	 */
+	private String businessScope;
+
+	/**
+	 * 附属订单编号-订单中使用
+	 */
+	private int orderId;
+
+	private String lng;
+	
+	private String lat;
+	
+	private String userId;
+
+	/**
+	 * 分类名称
+	 */
+	private String categoryName;
+
+	/**
+	 * 商家视频
+	 */
+	private String video;
+
+	/**
+	 * 商家轮播
+	 */
+	private List<MtSellerGallery> banner;
+
+	/**
+	 * 总销量
+	 */
+	private int sellerSaleCount;
+
+	/**
+	 * 月销量
+	 */
+	private int sellCount;
+
+	/**
+	 * 点击量
+	 */
+	private int clickCount;
+
+	/**
+	 * 距离--由客户端提交当前位置坐标后由服务端计算用户与商家的距离
+	 */
+	private double distance;
+
+	/**
+	 * 首页展示图地址
+	 */
+	private String indexImgUrl;
+
+	/**
+	 * 地区
+	 */
+	private String region;
+
+	/**
+	 * 详细地址
+	 */
+	private String address;
+
+	/**
+	 * 商品数量
+	 */
+	private int goodsCount;
+
+	/**
+	 * 关注人数
+	 */
+	private int attentionNo;
+
+	/**
+	 * 描述相符--根据评论自动计算
+	 */
+	private int matchDescription;
+
+	/**
+	 * 服务态度--根据评论自动计算
+	 */
+	private int serviceAttitude;
+
+	/**
+	 * 10公里范围内，1公里5分钟
+	 * 配送时间(分钟)---同城
+	 * @return
+	 */
+	private int deliveryTime;
+	
+	/**
+	 * 已认证
+	 * @return
+	 */
+	private String reviewed;
+	
+	/**
+	 * 商家评分
+	 * @return
+	 */
+	private double score;
+	
+	/**
+	 * 描述评分
+	 * @return
+	 */
+	private double matchDescriptionScore;
+	
+	/**
+	 * 服务评分
+	 * @return
+	 */
+	private double serviceAttitudeScore;
+	
+	/**
+	 * 物流评分
+	 * @return
+	 */
+	
+	private double streamServiceScore;
+	
+	
+	
+	public double getStreamServiceScore() {
+		return streamServiceScore;
+	}
+
+	public void setStreamServiceScore(double streamServiceScore) {
+		this.streamServiceScore = streamServiceScore;
+	}
+
+	public double getMatchDescriptionScore() {
+		return matchDescriptionScore;
+	}
+
+	public void setMatchDescriptionScore(double matchDescriptionScore) {
+		this.matchDescriptionScore = matchDescriptionScore;
+	}
+
+	public double getServiceAttitudeScore() {
+		return serviceAttitudeScore;
+	}
+
+	public void setServiceAttitudeScore(double serviceAttitudeScore) {
+		this.serviceAttitudeScore = serviceAttitudeScore;
+	}
+
+	public double getScore() {
+		return score;
+	}
+
+	public void setScore(double score) {
+		this.score = score;
+	}
+
+	public String getReviewed() {
+		return reviewed;
+	}
+
+	public void setReviewed(String reviewed) {
+		this.reviewed = reviewed;
+	}
+
+	public int getDeliveryTime() {
+		return deliveryTime;
+	}
+
+	public void setDeliveryTime(int deliveryTime) {
+		this.deliveryTime = deliveryTime;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getCategoryName() {
+		return categoryName;
+	}
+
+	public void setCategoryName(String categoryName) {
+		this.categoryName = categoryName;
+	}
+
+	public int getSellCount() {
+		return sellCount;
+	}
+
+	public void setSellCount(int sellCount) {
+		this.sellCount = sellCount;
+	}
+
+	public int getClickCount() {
+		return clickCount;
+	}
+
+	public void setClickCount(int clickCount) {
+		this.clickCount = clickCount;
+	}
+
+	public double getDistance() {
+		return distance;
+	}
+
+	public void setDistance(double distance) {
+		this.distance = distance;
+	}
+
+	public String getIndexImgUrl() {
+		return indexImgUrl;
+	}
+
+	public void setIndexImgUrl(String indexImgUrl) {
+		this.indexImgUrl = indexImgUrl;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public int getGoodsCount() {
+		return goodsCount;
+	}
+
+	public void setGoodsCount(int goodsCount) {
+		this.goodsCount = goodsCount;
+	}
+
+	public int getAttentionNo() {
+		return attentionNo;
+	}
+
+	public void setAttentionNo(int attentionNo) {
+		this.attentionNo = attentionNo;
+	}
+
+	public int getMatchDescription() {
+		return matchDescription;
+	}
+
+	public void setMatchDescription(int matchDescription) {
+		this.matchDescription = matchDescription;
+	}
+
+	public int getServiceAttitude() {
+		return serviceAttitude;
+	}
+
+	public void setServiceAttitude(int serviceAttitude) {
+		this.serviceAttitude = serviceAttitude;
+	}
+
+	public int getCategoryId() {
+		return categoryId;
+	}
+
+	public void setCategoryId(int i) {
+		this.categoryId = i;
+	}
+
+	public String getBusinessScope() {
+		return businessScope;
+	}
+
+	public void setBusinessScope(String businessScope) {
+		this.businessScope = businessScope;
+	}
+
+	public String getVideo() {
+		return video;
+	}
+
+	public void setVideo(String video) {
+		this.video = video;
+	}
+
+	public List<MtSellerGallery> getBanner() {
+		return banner;
+	}
+
+	public void setBanner(List<MtSellerGallery> list) {
+		this.banner = list;
+	}
+
+	public String getRegion() {
+		return region;
+	}
+
+	public void setRegion(String region) {
+		this.region = region;
+	}
+
+	public int getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(int orderId) {
+		this.orderId = orderId;
+	}
+
+	public String getLng() {
+		return lng;
+	}
+
+	public void setLng(String lng) {
+		this.lng = lng;
+	}
+
+	public String getLat() {
+		return lat;
+	}
+
+	public void setLat(String lat) {
+		this.lat = lat;
+	}
+
+	public int getSellerSaleCount() {
+		return sellerSaleCount;
+	}
+
+	public void setSellerSaleCount(int sellerSaleCount) {
+		this.sellerSaleCount = sellerSaleCount;
+	}
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+	
+	
+
+	public void pojoParser( MtSeller seller){
+		this.setId(seller.getId());
+		this.setName(seller.getName());
+		this.setCategoryName(seller.getCatName());
+		this.setIndexImgUrl(seller.getLogo());
+		this.setAddress(seller.getAddress());
+	}
+}

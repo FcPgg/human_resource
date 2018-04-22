@@ -1,0 +1,65 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.service.MtPlatformCapitalTradeLogService;
+import com.xt.ptus.obejcts.Pagination;
+
+@Service
+public class MtPlatformCapitalTradeLogServiceImpl extends BaseServiceImpl<MtPlatformCapitalTradeLog> implements MtPlatformCapitalTradeLogService{
+
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platformCapitalTradeLogDao;
+	
+	@Override
+	public  Pagination<MtPlatformCapitalTradeLog> getPlatformCapitalTradeLog(int pager, int limit) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtPlatformCapitalTradeLog.class);
+		dc.addOrder(Order.desc("id"));
+		return this.getWithPagination(dc, pager, limit, "id");
+	}
+
+	@Override
+	public double platformWithdrawalsMoney() {
+		double amount  = platformCapitalTradeLogDao.getPlatformWithdrawalsMoney();
+		amount = Double.valueOf(amount).doubleValue(); 
+		return amount;
+	}
+
+	@Override
+	public MtPlatformCapitalTradeLog platformWithdrawals(double alipayAmount,
+			String alipayAccountNumber) {
+			//创建平台资金记录
+			MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+			log.setAmount(-alipayAmount);
+			log.setOperator(13);
+			log.setRemark("管理员提现");
+			log.setSource("平台");
+			log.setTarget("支付宝账户" + alipayAccountNumber);
+			log.setTradeTime(new Date());
+			log.setSort(Constants.PLATFORM_CAPITAL_WITHDRAWALS_YES);
+			//log.setSellerWithdrawalsId(sellerWithdrawalsId);
+			platformCapitalTradeLogDao.save(log);
+			return log;
+	}
+
+	@Override
+	public double platformAllMoney() {
+		double amount  = platformCapitalTradeLogDao.getPlatformAllMoney();
+		amount = Double.valueOf(amount).doubleValue(); 
+		return amount;
+	}
+
+}

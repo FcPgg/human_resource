@@ -1,0 +1,667 @@
+package com.xt.ptus.alipay.controller;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.AlipayClient;
+import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.google.gson.Gson;
+import com.xt.ptus.alipay.service.AlipayService;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtSellerRechargeTradeLog;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.service.MtIntegrateService;
+import com.xt.ptus.mt.service.MtOrderInfoService;
+import com.xt.ptus.mt.service.MtSellerRechargeTradeLogService;
+import com.xt.ptus.mt.service.MtSellerSettledApplyService;
+import com.xt.ptus.mt.service.MtUserAccountTradeLogService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.StringUtil;
+//import com.alipay.config.*;
+
+@Controller
+@RequestMapping("/alipay/base/")
+public class AlipayController {
+
+	private static Logger logger = Logger.getLogger(AlipayController.class);
+
+	private String APPID = null;
+
+	private String APP_SELLER;
+
+	private String PRIVATE_KEY;
+
+	private String PUBLIC_KEY;
+
+	private String NOTIFYURL_MOBILE;
+
+	private String NOTIFYURL_PC;
+
+	private String CHARSET = "utf-8";
+	
+	private String GETEWAYURL_PC;
+	
+	private String sign_type;
+	
+	private String return_url;
+	
+	private String notify_url;
+	
+	private String public_key_pc;
+	
+	/**
+	 * 支付宝支付订单参数
+	 */
+	private static final String ALIPAY_ORDER = "alipayOrder"; 
+	
+	/**
+	 * 支付宝购买e币参数
+	 */
+	private static final String ALIPAY_BUY_INTEGRATE = "alipayBuyIntegrate";
+	
+	/**
+	 * 支付宝充值余额
+	 */
+	private static final String ALIPAY_RECHARGE_BALANCE = "alipayRechargeBalance";
+	
+	/**
+	 * 支付入驻费
+	 */
+	private static final String ALIPAY_SETTLEMENT_FEE_PAY_MOBILE = "settlementFeePay";
+	
+	/**
+	 * 支付宝快速支付到商家
+	 */
+	private static final String ALIPAY_FAST_PAY_TO_SELLER = "alipayFastPayToSeller";
+	
+	@Resource
+	private MtOrderInfoService orderService;
+	
+	@Resource
+	private MtIntegrateService integrateService;
+	
+	@Resource
+	private MtSellerSettledApplyService sellerApplyService;
+	
+	@Resource
+	private MtSellerRechargeTradeLogService sellerRechargeTradeLogService;
+	
+	@Resource
+	private MtUserAccountTradeLogService userAccountTradeService;
+	
+
+	public AlipayController() throws IOException {
+		InputStream is = this.getClass().getResourceAsStream("/alipay.properties");
+		Properties prop = new Properties();
+		prop.load(is);
+		is.close();
+
+		this.APPID = prop.getProperty("alipay.appId");
+		this.APP_SELLER = prop.getProperty("alipay.seller");
+		this.PRIVATE_KEY = prop.getProperty("alipay.privateKeyPkcs");
+		this.PUBLIC_KEY = prop.getProperty("alipay.publicKey");
+		this.NOTIFYURL_MOBILE = prop.getProperty("alipay.notifyUrl.mobile");
+		this.NOTIFYURL_PC = prop.getProperty("alipay.notifyUrl.pc");
+		
+		this.GETEWAYURL_PC = prop.getProperty("alipay_gatewayUrl_pc");
+		this.sign_type = prop.getProperty("alipay_sign_type_pc");
+		this.return_url = prop.getProperty("alipay_return_url_pc");
+		this.notify_url = prop.getProperty("alipay_notify_url_pc");
+		this.public_key_pc = prop.getProperty("alipay_public_key_pc");
+	}
+
+	/**
+	 * 获取移动端支付参数
+	 * 
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getMobileAlipayParams")
+	private Result getAlipayParams(HttpServletRequest request) {
+		Result result = new Result();
+
+		String notifyUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() +"/";
+
+		try {
+			InputStream is = this.getClass().getResourceAsStream("/alipay.properties");
+			Properties prop = new Properties();
+			prop.load(is);
+			is.close();
+
+			Map<String, String> params = new HashMap<String, String>();
+			params.put("seller", prop.getProperty("alipay.seller"));
+
+			if(ALIPAY_ORDER.equals(request.getParameter("code"))){
+				//支付订单
+				notifyUrl += prop.getProperty("alipay.payOrder.notifyUrl.mobile");
+			} else if(ALIPAY_BUY_INTEGRATE.equals(request.getParameter("code"))){
+				//购买e币
+				notifyUrl += prop.getProperty("alipay.buyIntergate.notifyUrl.mobile");
+				
+				MtIntegrate integrate = new MtIntegrate();
+				integrate.setUserId(Integer.parseInt(request.getParameter("userId")));
+				integrateService.update(integrate);
+				notifyUrl += "?buyIntegrate" + integrate.getId();
+			} else if(ALIPAY_RECHARGE_BALANCE.equals(request.getParameter("code"))){
+				//充值余额
+				notifyUrl += prop.getProperty("alipay.rechargeBalance.notifyUrl.mobile");
+				
+				MtUserAccountTradeLog log = new MtUserAccountTradeLog();
+				log.setUserId(Integer.parseInt(request.getParameter("userId")));
+				userAccountTradeService.update(log);
+				notifyUrl += "?rechargeBalance" + log.getId();
+			} else if(ALIPAY_SETTLEMENT_FEE_PAY_MOBILE.equals(request.getParameter("code"))){
+				//支付入驻费
+				notifyUrl += prop.getProperty("alipay.settlementFeePay.notifyUrl.mobile");
+			} else if(ALIPAY_FAST_PAY_TO_SELLER.equals(request.getParameter("caod"))){
+				//快速支付到商家
+				notifyUrl += prop.getProperty("alipay.fastPayToSeller.notifyUrl.mobile");
+			}
+
+			params.put("notifyUrl", notifyUrl);
+
+			result.setData(params);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 移动端调用支付功能异步通知接口，成功则返回SUCCESS给支付宝服务器完成支付
+	 * 
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws AlipayApiException
+	 */
+	@ResponseBody
+	@RequestMapping("notifyUrlPayOrderMobile")
+	private String notifyUrlPayOrderMobile(HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
+
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+
+			try {
+				boolean ifSuccess = AlipayService.getInstance().alipayOrderMobile(params, outTradeNo, tradeStatus, orderService);
+				if(ifSuccess){
+					return "success";
+				} else {
+					return "fail";
+				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	/**
+	 * 移动端调购买e币接口，成功则返回SUCCESS给支付宝服务器完成支付
+	 * 
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws AlipayApiException
+	 */
+	@ResponseBody
+	@RequestMapping("notifyUrlBuyIntegrateMobile")
+	private String notifyUrlBuyIntegrateMobile(HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
+
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+
+			try {
+				boolean ifSuccess = AlipayService.getInstance().buyIntegrate(params, outTradeNo.replace("buyIntegrate", ""), tradeStatus, integrateService);
+				logger.debug(" buy integrate result:" + ifSuccess);
+				if(ifSuccess){
+					return "success";
+				} else {
+					return "fail";
+				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+			return "success";
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	/**
+	 * 移动端支付入驻费，成功则返回SUCCESS给支付宝服务器完成支付
+	 * 
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws AlipayApiException
+	 */
+	@ResponseBody
+	@RequestMapping("notifyUrlSettlementFeePayMobile")
+	private String notifyUrlSettlementFeePayMobile(HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
+
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+
+			try {
+				boolean ifSuccess = AlipayService.getInstance().paySettlementFee(params, outTradeNo.replace("settlementFee", ""), tradeStatus, sellerApplyService);
+				logger.debug(" buy integrate result:" + ifSuccess);
+				if(ifSuccess){
+					return "success";
+				} else {
+					return "fail";
+				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+			return "success";
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	/**
+	 * 移动端充值余额，成功则返回SUCCESS给支付宝服务器完成支付
+	 * 
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws AlipayApiException
+	 */
+	@ResponseBody
+	@RequestMapping("notifyUrlRechargeBalanceMobile")
+	private String notifyUrlRechargeBalanceMobile(HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
+
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+
+			try {
+				boolean ifSuccess = AlipayService.getInstance().rechargeBalance(params, outTradeNo.replace("rechargeBalance", ""), tradeStatus, userAccountTradeService);
+				logger.debug("recharge balance result:" + ifSuccess);
+				if(ifSuccess){
+					return "success";
+				} else {
+					return "fail";
+				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+			return "success";
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	/**
+	 * 移动端支付宝提现
+	 * @param userId
+	 * @param amount
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("withdrawCashMobileAlipay")
+	private Result withdrawCashMobileAlipay(@RequestParam("userId") String userId, @RequestParam("amount") String amount, @RequestParam("targetAlipayUser") String targetAlipayUser){
+		Result result = new Result();
+
+		try {
+			Result re = userAccountTradeService.withdrawCashAlipay(userId, Double.parseDouble(amount), targetAlipayUser);
+			if(re.isSuccess()){
+				result.setSuccess(true);
+			} else {
+				result.setSuccess(false);
+				result.setMessage(re.getMessage());
+			}
+			
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 移动端支付宝立即支付
+	 */
+	@ResponseBody
+	@RequestMapping("notifyUrlFastPayToSellerMobile")
+	private String notifyUrlFastPayToSellerMobile(HttpServletRequest request) throws AlipayApiException, UnsupportedEncodingException {
+
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+
+			try {
+				boolean ifSuccess = AlipayService.getInstance().alipayOrderMobile(params, outTradeNo, tradeStatus, orderService);
+				if(ifSuccess){
+					return "success";
+				} else {
+					return "fail";
+				}
+			} catch (IOException e) {
+				logger.error(e);
+			}
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	/**
+	 * PC网站支付
+	 * @throws IOException 
+	 * @throws AlipayApiException 
+	 */
+	@ResponseBody
+	@RequestMapping("alipayPc")
+	public Result alipayPc(HttpServletRequest request,HttpServletResponse response) throws IOException, AlipayApiException{
+
+	    	Result result = new Result();
+
+			InputStream is = this.getClass().getResourceAsStream("/alipay.properties");
+			Properties prop = new Properties();
+			is.close();
+			
+			//商家id
+			String sellerId = request.getParameter("sellerId");
+			//充值数量
+			String number = request.getParameter("number");
+			//套餐Id
+			String setMealId = request.getParameter("setMealId");
+			
+			//生成充值订单
+			//商户订单号，商户网站订单系统中唯一订单号，必填
+			String out_trade_no = new String(request.getParameter("WIDout_trade_no").getBytes("ISO-8859-1"),"UTF-8");
+			//付款金额，必填
+			String total_amount = new String(request.getParameter("WIDtotal_amount").getBytes("ISO-8859-1"),"UTF-8");
+			//订单名称，必填
+			//String subject = new String(request.getParameter("WIDsubject").getBytes("ISO-8859-1"),"UTF-8");
+			String subject = "购买e币";
+			//商品描述，可空
+			//String body = new String(request.getParameter("WIDbody").getBytes("ISO-8859-1"),"UTF-8");
+			String body = "e掌柜e币充值";
+			
+			//创建充值订单
+		    sellerRechargeTradeLogService.foundSellerRecharge(out_trade_no,total_amount,sellerId,number,setMealId);
+			
+			System.out.println(this.GETEWAYURL_PC);
+		    
+			//获得初始化的AlipayClient
+			AlipayClient alipayClient = new DefaultAlipayClient(this.GETEWAYURL_PC, this.APPID, this.PRIVATE_KEY, "json", "utf-8", this.public_key_pc, "RSA");
+
+			//设置请求参数
+			AlipayTradePagePayRequest alipayRequest = new AlipayTradePagePayRequest();
+			alipayRequest.setReturnUrl(this.return_url);
+			alipayRequest.setNotifyUrl(this.notify_url);
+			
+			
+			alipayRequest.setBizContent("{\"out_trade_no\":\""+ out_trade_no +"\"," 
+					+ "\"total_amount\":\""+ total_amount +"\"," 
+					+ "\"subject\":\""+ subject +"\"," 
+					+ "\"body\":\""+ body +"\"," 
+					+ "\"product_code\":\"FAST_INSTANT_TRADE_PAY\"}");
+			
+			//请求
+			String results = alipayClient.pageExecute(alipayRequest).getBody();
+
+			result.setData(results);
+			result.setSuccess(true);
+			return result;
+	}
+		
+
+	/**
+	 * 支付宝同步回调页面
+	 * @throws UnsupportedEncodingException 
+	 * @throws AlipayApiException 
+	 */
+	@RequestMapping("returnUrlToPc")
+	public String returnUrlToPc(HttpServletRequest request) throws UnsupportedEncodingException, AlipayApiException{
+		
+	  // return "redirect:http://localhost:8080/Web/mt/mtOpenEditor/showSellerAccountPage?title=商家账户&pagePath=admin/seller_account/seller_account";
+	   return "redirect:http://www.yiwke.com/Web";
+	}
+	
+	/**
+	 * 支付宝异步通知
+	 * @throws UnsupportedEncodingException 
+	 * @throws AlipayApiException 
+	 */
+	@RequestMapping("notifyUrlPc")
+	public String notifyUrlPc(HttpServletRequest request) throws UnsupportedEncodingException, AlipayApiException{
+		// 获取支付宝POST过来反馈信息
+		Map<String, String> params = new HashMap<String, String>();
+		Map requestParams = request.getParameterMap();
+		for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext();) {
+			String name = (String) iter.next();
+			String[] values = (String[]) requestParams.get(name);
+			String valueStr = "";
+			for (int i = 0; i < values.length; i++) {
+				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
+			}
+			// 乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+			// valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+			params.put(name, valueStr);
+		}
+
+		if (requestParams != null && requestParams.size() > 0) {
+
+			logger.debug("alipay notify params:" + (new Gson()).toJson(params));
+
+			// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以下仅供参考)//
+
+			// 商户订单号
+			String outTradeNo = new String(params.get("out_trade_no").getBytes("ISO-8859-1"), "UTF-8");
+
+			// 交易状态
+			String tradeStatus = new String(params.get("trade_status").getBytes("ISO-8859-1"), "UTF-8");
+			
+			//交易金额
+			String total_amount = new String(params.get("total_amount").getBytes("ISO-8859-1"),"UTF-8");
+
+			boolean verifyResult = AlipaySignature.rsaCheckV1(params, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDDI6d306Q8fIfCOaTXyiUeJHkrIvYISRcc73s3vF1ZT7XN8RNPwJxo8pWaJMmvyTn9N4HQ632qJBVHf8sxHi/fEsraprwCtzvzQETrNRwVxLO5jVmRGi60j8Ue1efIlzPXV9je9mkjzOmdssymZkh2QhUrCmZYI/FCEa3/cNMW0QIDAQAB", "utf-8","RSA");
+			logger.debug("---------alipay verifyResult : " + verifyResult + "----------------");
+
+			if (verifyResult) {
+				if (!StringUtil.IsNullOrEmpty(outTradeNo)) {
+					
+					MtSellerRechargeTradeLog rechargeTrade = sellerRechargeTradeLogService.getAmountByOutTradeNo(outTradeNo);
+					double totalFee = rechargeTrade.getAmount();
+					double totalAmount = Double.parseDouble(total_amount);
+
+					// 比对支付总价与商品总价是否相同
+					if (totalFee == totalAmount) {
+						// 获取支付宝的通知返回参数，可参考技术文档中页面跳转同步通知参数列表(以上仅供参考)//
+						// 计算得出通知验证结果
+						// boolean AlipaySignature.rsaCheckV1(Map<String,
+						// String> params, String
+						// publicKey, String charset, String sign_type)
+
+						if (tradeStatus.equals("TRADE_FINISHED") || tradeStatus.equals("TRADE_SUCCESS")) {
+							// 判断该笔订单是否在商户网站中已经做过处理
+							// 如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+							// 请务必判断请求时的total_fee、seller_id与通知时获取的total_fee、seller_id为一致的
+							// 如果有做过处理，不执行商户的业务程序
+							  if(rechargeTrade.getRechargeState() !=1){
+							// 注意：
+							// 如果签约的是可退款协议，退款日期超过可退款期限后（如三个月可退款），支付宝系统发送该交易状态通知
+							// 如果没有签约可退款协议，那么付款完成后，支付宝系统发送该交易状态通知。
+							try {
+								logger.debug("----------begin alipay----------");
+								//orderService.payOrderByAlipay(orderIds, params);
+								sellerRechargeTradeLogService.rechargeTradeLogByAlipay(outTradeNo);
+								logger.debug("----------end alipay----------");
+
+								logger.debug("AlipayPayStatus: pay order success!!!!");
+								return "success";
+							} catch (Exception e) {
+								logger.error(e);
+							}
+						}
+					  }else{
+						  return "success";
+					  }
+					} else {
+						logger.error("AlipayPayError: pay fee is diffrent with order fee:" + "{totalAmount:" + totalAmount + ",orderFee:" + totalFee);
+					}
+				} else {// 验证失败
+					logger.error("AlipayPayError: outTradeNo is null!!!");
+				}
+			} else {
+				logger.debug("---------alipay verify request unpassed! : " + verifyResult + "----------------");
+			}
+		} else {
+			logger.error("AlipayPayError: params is not send!!!");
+		}
+		return "fail";
+	}
+	
+	
+}

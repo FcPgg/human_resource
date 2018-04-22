@@ -1,0 +1,111 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtIntegrateDao;
+import com.xt.ptus.mt.dao.MtSignInDao;
+import com.xt.ptus.mt.dao.MtUserSignInLogDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtSignIn;
+import com.xt.ptus.mt.entity.MtUserSignInLog;
+import com.xt.ptus.mt.service.MtUserSignInLogService;
+import com.xt.ptus.util.DateUtil;
+
+@Service
+public class MtUserSignInLogServiceImpl extends BaseServiceImpl<MtUserSignInLog> implements MtUserSignInLogService{
+
+	@Autowired
+	private MtSignInDao signDao;
+	
+	@Autowired
+	private MtUserSignInLogDao logDao;
+	
+	@Autowired
+	private MtIntegrateDao integrateDao;
+	
+	/**
+	 * 用户签到
+	 */
+	@Override
+	public String userSignIn(String userId) throws Exception {
+		//今日签到信息
+		MtSignIn sign = null;
+		
+		MtUserSignInLog lastLog = logDao.getLastSignInLog(userId);
+		
+		MtUserSignInLog log = new MtUserSignInLog();
+		
+		Date date = new Date();
+		
+		if(lastLog == null){
+			//第一次签到
+			sign = signDao.getSignInfoByDayNo("1");
+			if(sign != null){
+				log.setCount(sign.getCount());
+				log.setSignInId(Integer.parseInt(sign.getId()));
+			} else {
+				return "签到失败";
+			}
+		} else {
+			try {
+				int dayDiff = DateUtil.daysBetween(lastLog.getSignInTime(), date);
+				System.out.println("dayDiff:" + dayDiff );
+				if(dayDiff == 0){
+					return "您今天已经签过到了！";
+				} else if(dayDiff > 1){
+					//断签
+					sign = signDao.getSignInfoByDayNo("1");
+					log.setSignInId(Integer.parseInt(sign.getId()));
+					log.setCount(sign.getCount());
+				} else if(dayDiff == 1) {
+					//不断签
+					sign = signDao.getNextSignInfo(lastLog.getSignInId());
+					log.setSignInId(Integer.parseInt(sign.getId()));
+					log.setCount(sign.getCount());
+				}
+			} catch (Exception e) {
+				throw e;
+			}
+		}
+		
+		log.setSignInTime(date);
+		log.setUserId(Integer.parseInt(userId));
+		
+		logDao.save(log);
+		
+		MtIntegrate integrate = new MtIntegrate();
+		integrate.setUserId(Integer.parseInt(userId));
+		integrate.setCreateTime(new Date());
+		integrate.setRemark("签到赠送");
+		integrate.setSource("签到赠送");
+		integrate.setAmount(log.getCount());
+		
+		integrateDao.save(integrate);
+		
+		
+		return "签到成功！" + log.getCount() + "e币已放入您的e币账户中";
+	}
+
+	/**
+	 * 获取用户本月签到信息
+	 */
+	@Override
+	public List<MtUserSignInLog> getUserSignInLog(String userId) {
+		return logDao.getUserSignInLog(userId);
+	}
+
+	@Override
+	public boolean getTodayUserSignInLog(String userId) throws Exception {
+		MtUserSignInLog lastLog = logDao.getLastSignInLog(userId);
+		if(lastLog == null){
+			return false;
+		}
+		int dayDiff = DateUtil.daysBetween(new Date(), lastLog.getSignInTime());
+		return dayDiff == 0;
+	}
+}

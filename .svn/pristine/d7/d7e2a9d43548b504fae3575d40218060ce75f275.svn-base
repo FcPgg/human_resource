@@ -1,0 +1,31 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSellerSettledApply;
+
+public interface MtSellerSettledApplyService extends BaseService<MtSellerSettledApply>{
+
+	//获取审核商家详情
+	public MtSellerSettledApply getApplyInfo(String id);
+
+	//审核通过
+	public void agreeExamine(String id) throws Exception;
+	
+	//审核不通过
+	public void disagreeExamine(String id, String reason) throws Exception;
+
+	//通过名称查询商家避免重名
+	public boolean getSellerByName(String sellerName);
+
+	// 用户获取审核结果
+	public List<MtSellerSettledApply> getApplyResultByUserId(String userId);
+
+	//我的店铺
+	public List<MtSellerSettledApply> getUserSellerList(String userId);
+
+	//支付宝支付入驻费
+	public boolean paySettlementFeeByAlipay(String outTradeNo, double amount);
+
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="WealthService"
+  id="myeclipse.1469755250004"
+  context-root="/WealthService"
+  j2ee-spec="5.0"
+  archive="WealthService.war">
+  <attributes>
+    <attribute name="webrootdir" value="WebRoot" />
+  </attributes>
+</project-module>
+

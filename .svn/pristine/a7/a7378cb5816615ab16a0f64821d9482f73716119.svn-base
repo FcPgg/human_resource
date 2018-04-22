@@ -1,0 +1,55 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtMaterialCatalogDao;
+import com.xt.ptus.mt.entity.MtMaterialCatalog;
+import com.xt.ptus.mt.service.MtMaterialCatalogService;
+
+@Service
+public class MtMaterialCatalogServiceImpl extends BaseServiceImpl<MtMaterialCatalog> implements MtMaterialCatalogService{
+
+	@Autowired
+	private MtMaterialCatalogDao catalogDao;
+	
+	@Override
+	public MtMaterialCatalog getMaterialCatalogBySellerId(String sellerId) {
+		
+		List<MtMaterialCatalog> list = catalogDao.getMaterialCatalogBySellerId(sellerId);
+		
+		MtMaterialCatalog rootCatalog = null;
+		
+		if(list != null && list.size() > 0){
+			//找到根节点
+			for(MtMaterialCatalog mt : list){
+				if(mt.getPid() == -1){
+					rootCatalog = mt;
+				}
+			}
+			if(rootCatalog != null){
+				findChildren(rootCatalog, list);
+			}
+		}
+		
+		return rootCatalog;
+	}
+	
+	private void findChildren(MtMaterialCatalog parent, List<MtMaterialCatalog> srcList){
+		List<MtMaterialCatalog> result = new ArrayList<MtMaterialCatalog>();
+		
+		if(srcList != null && srcList.size() > 0){
+			for(MtMaterialCatalog catalog : srcList){
+				if(catalog.getPid() == Integer.parseInt(parent.getId())){
+					result.add(catalog);
+					findChildren(catalog, srcList);
+				}
+			}
+		}
+		parent.setChildren(result);
+	}
+}

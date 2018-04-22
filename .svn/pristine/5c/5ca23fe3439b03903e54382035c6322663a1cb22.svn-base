@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtGoodsParams;
+import com.xt.ptus.mt.service.MtGoodsParamsService;
+
+@Service
+public class MtGoodsParamsServiceImpl extends BaseServiceImpl<MtGoodsParams> implements MtGoodsParamsService{
+
+}

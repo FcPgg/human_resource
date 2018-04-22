@@ -1,0 +1,163 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.ContextLoader;
+import org.springframework.web.context.WebApplicationContext;
+
+import com.google.gson.Gson;
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtTaskExeLogDao;
+import com.xt.ptus.mt.dao.MtTaskListDao;
+import com.xt.ptus.mt.dao.MtTaskParamsDao;
+import com.xt.ptus.mt.entity.MtTaskExeLog;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+import com.xt.ptus.mt.service.MtTaskListService;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtTaskListServiceImpl extends BaseServiceImpl<MtTaskList> implements MtTaskListService{
+	
+	private static Logger logger = Logger.getLogger(MtTaskListServiceImpl.class);
+
+	@Autowired
+	private MtTaskListDao dao;
+	
+	@Autowired
+	private MtTaskParamsDao paramsDao;
+	
+	@Autowired
+	private MtTaskExeLogDao logDao;
+	
+	/**
+	 * 添加定时任务
+	 * @param chanel 频道
+	 * @param executeTime 需要执行的时间
+	 * @param serviceName 需要调用的serviceImpl类名
+	 * @param methodName 需要调用的方法名
+	 * @param params 传递的参数  param.dataType 为JAVA数据类型 [String, Double, Integer]
+	 */
+	@Override
+	public MtTaskList addTask(String chanel, String executeTime, String serviceName, String methodName, List<MtTaskParams> params) throws Exception {
+		return dao.addTask(chanel, executeTime, serviceName, methodName, params);
+	}
+
+	@Override
+	public void exeTask(String taskId) throws Exception{
+		MtTaskList task = dao.get(taskId, MtTaskList.class);
+		if(task != null){
+			task.setParams(paramsDao.getParamsByTaskId(task.getId()));
+			
+			Class[] classArray = null;
+			Object[] paramArray = null;
+			List<Map<String, String>> paramList = new ArrayList<Map<String, String>>();
+			if(task.getParams() != null){
+				classArray = new Class[task.getParams().size()];
+				paramArray = new Object[task.getParams().size()];
+				int index = 0;
+				for(MtTaskParams param : task.getParams()){
+					
+					if("String".equals(param.getDataType())){
+						classArray[index] = String.class;
+						
+						if(!StringUtil.IsNullOrEmpty(param.getValue())){
+							paramArray[index] = String.valueOf(param.getValue());
+						} else {
+							paramArray[index] = null;
+						}
+					} else if("Integer".equals(param.getDataType())){
+						classArray[index] = Integer.class;
+						
+						if(!StringUtil.IsNullOrEmpty(param.getValue())){
+							paramArray[index] = Integer.parseInt(param.getValue());
+						} else {
+							paramArray[index] = null;
+						}
+					} else if("Double".equals(param.getDataType())){
+						classArray[index] = Double.class;
+						
+						if(!StringUtil.IsNullOrEmpty(param.getValue())){
+							paramArray[index] = Double.parseDouble(param.getValue());
+						} else {
+							paramArray[index] = null;
+						}
+					}
+					Map<String, String> item = new HashMap<String, String>();
+					item.put("name", param.getName());
+					item.put("paramName", param.getParamName());
+					item.put("value", param.getValue());
+					paramList.add(item);
+					index++;
+				}
+			}
+			
+			//获取当前上下文环境，spring容器
+			WebApplicationContext wac = ContextLoader.getCurrentWebApplicationContext(); 
+			Object bean = wac.getBean(task.getServiceName());
+			
+			MtTaskExeLog log = logDao.getLogByTaskId(task.getId());
+			if(log == null){
+				log = new MtTaskExeLog();
+				log.setExecuteCount(1);
+			}
+			try {
+
+				log.setServiceName(task.getServiceName());
+				log.setMethodName(task.getMethodName());
+				log.setChanel(task.getChanel());
+				log.setExecuteTime(task.getExecuteTime());
+				log.setRemark(task.getRemark());
+				log.setRunTime(new Date());
+				log.setTaskId(Integer.parseInt(task.getId()));
+				log.setExecuteCount(log.getExecuteCount() + 1);
+				log.setParams((new Gson()).toJson(paramList));
+				log.setExecutedResult("0");
+				
+				//获取执行方法
+				Method method = bean.getClass().getDeclaredMethod(task.getMethodName(), classArray);
+				//反射调用方法，methodParam:方法参数
+				method.invoke(bean, paramArray);
+				
+				dao.remove(task);
+				paramsDao.removeParamsByTaskId(task.getId());
+				
+				if(!StringUtil.IsNullOrEmpty(log.getId()) && Integer.parseInt(log.getId()) > 0){
+					logDao.update(log);
+				} else {
+					logDao.save(log);
+				}
+			} catch (Exception e) {
+				logger.error(e.getStackTrace());
+				log.setErrorReason(e.getLocalizedMessage());
+				log.setExecutedResult("1");
+				if(!StringUtil.IsNullOrEmpty(log.getId()) && Integer.parseInt(log.getId()) > 0){
+					logDao.update(log);
+				} else {
+					logDao.save(log);
+				}
+				throw e;
+			}
+		}
+	}
+
+	@Override
+	public void removeTask(String taskId) throws Exception{
+		
+	}
+
+	@Override
+	public List<MtTaskList> getList(String currentTime) {
+		return getCurrentSession().createCriteria(MtTaskList.class).add(Property.forName("executeTime").eq(currentTime)).list();
+	}
+
+}

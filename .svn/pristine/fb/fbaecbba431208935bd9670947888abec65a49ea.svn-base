@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSecondLevelCategory;
+
+public interface MtSecondLevelCategoryDao extends BaseDao<MtSecondLevelCategory>{
+
+	List<MtSecondLevelCategory> getDataBySellerId(String sellerId);
+
+}

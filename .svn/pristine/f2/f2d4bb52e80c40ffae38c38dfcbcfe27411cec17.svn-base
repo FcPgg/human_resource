@@ -1,0 +1,18 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+
+public interface MtTaskListService extends BaseService<MtTaskList>{
+	
+	MtTaskList addTask(String channel, String exeTime, String serviceName, String methodName, List<MtTaskParams> params) throws Exception;
+	
+	void exeTask(String taskId) throws Exception;
+	
+	void removeTask(String taskId) throws Exception;
+
+	List<MtTaskList> getList(String currentTime);
+}

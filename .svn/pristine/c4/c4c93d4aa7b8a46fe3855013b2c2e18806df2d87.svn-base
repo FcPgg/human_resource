@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserPublishPropsTemplate;
+
+public interface MtUserPublishPropsTemplateService extends BaseService<MtUserPublishPropsTemplate>{
+
+	List<MtUserPublishPropsTemplate> getPropsByInfoId(String infoId);
+
+}

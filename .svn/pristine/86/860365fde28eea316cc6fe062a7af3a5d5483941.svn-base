@@ -1,0 +1,50 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.helper.KdniaoTrackQuery;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.sys.entity.SysDictionaryDatas;
+import com.xt.ptus.sys.service.SysDictionaryDatasService;
+
+@Controller
+@RequestMapping(value = "/mt/mtExpress/")
+public class MtExpressController {
+	
+	@Resource
+	private SysDictionaryDatasService service;
+	
+	private static Logger logger = Logger.getLogger(MtExpressController.class);
+	
+	//快递轨迹查询
+	@ResponseBody
+	@RequestMapping(value="selExpress")
+	public Result selExpress(HttpServletRequest request, @RequestParam("expName")String expName, @RequestParam("expNo")String expNo) throws Exception{
+		Result result = new Result();
+		String expCode = null;
+		try {
+			List<SysDictionaryDatas> list = service.getDictionaryByDictionary(expName);
+			for(SysDictionaryDatas dictionary : list){
+				expCode = dictionary.getCode();
+			}
+			KdniaoTrackQuery api = new KdniaoTrackQuery();
+			result.setData(api.getOrderTracesByJson(expCode,expNo));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+}

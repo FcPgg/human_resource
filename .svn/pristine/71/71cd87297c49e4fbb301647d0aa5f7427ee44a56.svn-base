@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtIntegrateExchangeLog;
+import com.xt.ptus.mt.dao.MtIntegrateExchangeLogDao;
+
+@Repository
+public class MtIntegrateExchangeLogDaoImpl extends BaseDaoImpl<MtIntegrateExchangeLog> implements MtIntegrateExchangeLogDao{
+
+}

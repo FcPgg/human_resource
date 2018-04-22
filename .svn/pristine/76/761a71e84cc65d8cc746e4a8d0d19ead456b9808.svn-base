@@ -1,0 +1,89 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.service.MtUserSignInLogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserSignInLog/")
+public class MtUserSignInLogControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtUserSignInLogControllerMobile.class); 
+	
+	@Resource
+	private MtUserSignInLogService service;
+	
+	/**
+	 * 用户签到
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("userSignIn")
+	private Result userSignIn(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.userSignIn(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取本月用户签到记录
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getUserSignInLog")
+	private Result getUserSignInLog(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getUserSignInLog(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+
+	/**
+	 * 获取今日用户签到信息
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getTodayUserSignInLog")
+	private Result getTodayUserSignInLog(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getTodayUserSignInLog(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

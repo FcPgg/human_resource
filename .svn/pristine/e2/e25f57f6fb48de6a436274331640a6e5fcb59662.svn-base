@@ -1,0 +1,14 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtSellerGalleryDao;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.service.MtSellerGalleryService;
+
+@Service
+public class MtSellerGalleryServiceImpl extends BaseServiceImpl<MtSellerGallery> implements MtSellerGalleryService{
+
+}

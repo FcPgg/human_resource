@@ -1,0 +1,233 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.beanutils.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.helper.JPushHelper;
+import com.xt.ptus.mt.dao.MtApplyAttachmentDao;
+import com.xt.ptus.mt.dao.MtCategoryDao;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAccountTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAttachmentDao;
+import com.xt.ptus.mt.dao.MtSellerDao;
+import com.xt.ptus.mt.dao.MtSellerSettledApplyDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.entity.MtApplyAttachment;
+import com.xt.ptus.mt.entity.MtCategory;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.entity.MtSellerAttachment;
+import com.xt.ptus.mt.entity.MtSellerSettledApply;
+import com.xt.ptus.mt.entity.MtUserInfo;
+import com.xt.ptus.mt.service.MtSellerSettledApplyService;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.PinyinUtil;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtSellerSettledApplyServiceImpl extends BaseServiceImpl<MtSellerSettledApply> implements MtSellerSettledApplyService{
+
+	@Autowired
+	private MtCategoryDao categoryDao;
+	
+	@Autowired 
+	private  MtSellerSettledApplyDao applyDao;
+	
+	@Autowired
+	private MtApplyAttachmentDao applyAttachmentDao;
+	
+	@Autowired
+	private MtSellerDao sellerDao;
+	
+	@Autowired
+	private MtUserInfoDao userDao;
+	
+	@Autowired
+	private MtSellerAccountTradeLogDao accountTradeLogDao;
+	
+    @Autowired
+    private MtSellerAttachmentDao sellerAttachmentDao;
+    
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platformDao;
+	
+    @Override
+    public void beforeInsert(MtSellerSettledApply t) {
+    	t.setCreateTime(new Date());
+    }
+    
+    /**
+     * 提交申请信息
+     */
+	@Override
+	public void afterUpdate(MtSellerSettledApply t){
+		//更新商家后更新商家用户
+		if(t.getApplyAttachment() != null && t.getApplyAttachment().size() > 0){
+	    	for(MtApplyAttachment applyAttachment : t.getApplyAttachment()){
+				if (!StringUtil.IsNullOrEmpty(applyAttachment.getId()) && Integer.parseInt(applyAttachment.getId()) > 0) {
+					applyAttachmentDao.update(applyAttachment);
+				} else {
+					applyAttachment.setApplyId(Integer.parseInt(t.getId()));
+					applyAttachmentDao.save(applyAttachment);
+				}
+		    }
+		}
+	}
+    
+    
+    
+	@Override
+	public MtSellerSettledApply getApplyInfo(String id) {
+
+       MtSellerSettledApply sellerSettledApply = applyDao.get(id, MtSellerSettledApply.class);
+       //获取申请附件
+       List<MtApplyAttachment> applyAttachments = applyAttachmentDao.getApplyAttachments(id);
+      
+       sellerSettledApply.setApplyAttachment(applyAttachments);
+              
+	   return sellerSettledApply;
+	}
+
+
+	/**
+	 * 审核通过，审核通过后把申请表里的数据迁移到商家表并生成商家用户
+	 * @throws InvocationTargetException 
+	 * @throws IllegalAccessException 
+	 */
+	@Override
+	public void agreeExamine(String id) throws Exception {
+        
+		MtSellerSettledApply apply = applyDao.get(id, MtSellerSettledApply.class);
+		apply.setStatus(Constants.SELLER_APPLY_STATUS_YES);
+		List<MtSeller> seller = sellerDao.getSellerByName(apply.getName());
+		if(seller.size() > 0){
+			throw new Exception("审核失败：商家重名!");
+		} else {
+			applyDao.update(apply);
+		}
+	}
+	
+	/**
+	 * 审核不通过
+	 */
+	@Override
+	public void disagreeExamine(String id, String reason) throws Exception {
+        
+		MtSellerSettledApply apply = applyDao.get(id, MtSellerSettledApply.class);
+		apply.setStatus(Constants.SELLER_APPLY_STATUS_NO);
+		apply.setFailReason(reason);
+		applyDao.update(apply);
+	}
+
+	/**
+	 * 通过名称查询商家避免重名
+	 */
+	@Override
+	public boolean getSellerByName(String sellerName) {
+		
+		List<MtSeller> seller = sellerDao.getSellerByName(sellerName);
+		return seller != null && seller.size() > 0;
+	}
+
+	/**
+	 *  用户获取审核结果
+	 */
+	@Override
+	public List<MtSellerSettledApply> getApplyResultByUserId(String userId) {
+		List<MtSellerSettledApply> sellerSettledApply = applyDao.getApplyResultByUserId(userId);
+		return sellerSettledApply;
+	}
+
+	@Override
+	public List<MtSellerSettledApply> getUserSellerList(String userId) {
+		List<MtSellerSettledApply> list = applyDao.getApplyResultByUserId(userId);
+		return list;
+	}
+
+	@Override
+	public boolean paySettlementFeeByAlipay(String outTradeNo, double amount) {
+		if(!StringUtil.IsNullOrEmpty(outTradeNo)){
+			MtSellerSettledApply apply = applyDao.get(outTradeNo, MtSellerSettledApply.class);
+			if(apply != null){
+				MtCategory category = categoryDao.get(String.valueOf(apply.getCategoryId()), MtCategory.class);
+				if(amount == category.getSettlementFee()){
+					
+					MtSeller seller = new MtSeller();
+					try {
+						BeanUtils.copyProperties(seller, apply);
+					} catch (Exception e) {
+						return false;
+					}
+					seller.setProvince(apply.getProvince());
+					seller.setCity(apply.getCity());
+					seller.setDistrict(apply.getDistrict());
+					seller.setAddress(apply.getAddress());
+					
+					//设置用户编号
+					seller.setUserInfoId(apply.getUserId());
+					seller.setId(null);
+				    sellerDao.save(seller);
+				    
+					
+				    //生成商家的同时，生成商家账号
+				    MtUserInfo userInfo = new MtUserInfo();
+					String name = PinyinUtil.getInstance().getPinyinCode(seller.getName());
+			        userInfo.setName(seller.getName());
+			        userInfo.setUserName(name);
+			        userInfo.setNickName(seller.getName());
+			        userInfo.setPassword(MD5Util.MD5(Constants.SELLER_INITIAL_PASSWORD));
+			        userInfo.setStatus(Constants.USER_STATUS_UNLOGIN);
+			        userInfo.setCategory(Constants.USER_INFO_CATEGORY_SYSTEM_USER);
+			        userDao.save(userInfo);
+			        
+			        //生成商家后，赠送商家入驻资金
+			        MtSellerAccountTradeLog accountTradeLog = new MtSellerAccountTradeLog();
+			        accountTradeLog.setSellerId(Integer.parseInt(seller.getId()));
+			        accountTradeLog.setAmount(Constants.SELLER_ACCOUNT_REGISTER_AMOUNT);
+			        accountTradeLog.setSource(Constants.SELLER_ACCOUNT_REGISTER_INFLOW);
+			        accountTradeLog.setTradeTime(new Date());
+			        // accountTradeLog.setOperator("admin");
+			        accountTradeLogDao.save(accountTradeLog);
+				 
+			        //获取申请商家的附件，迁入商家附件
+			        List<MtApplyAttachment> applyAttachments = applyAttachmentDao.getApplyAttachments(apply.getId());
+			        for(MtApplyAttachment applyAtt : applyAttachments){
+			        	MtSellerAttachment sellerAttachment = new MtSellerAttachment();
+			        	sellerAttachment.setSellerId(Integer.parseInt(seller.getId()));
+			        	sellerAttachment.setAttId(applyAtt.getAttId());
+			        	sellerAttachment.setCategory(applyAtt.getCategory());
+			        	sellerAttachmentDao.save(sellerAttachment);
+			        }
+			        
+			        //支付后，审核状态设为已经通过
+			        apply.setStatus(Constants.SELLER_APPLY_STATUS_AUTHENTICAED);
+			        applyDao.update(apply);
+			        
+			        //创建平台交易记录
+			        MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+					log.setAmount(amount);
+					log.setOperator(apply.getUserId());
+					log.setRemark(apply.getName() + "支付的入驻费");
+					log.setSource(Constants.TRADE_SOURCE_ALIPAY);
+					log.setTarget("认证商家");
+					log.setTradeTime(new Date());
+					platformDao.save(log);
+			        
+			        //推送审核信息
+			        JPushHelper.sendNotificationToUser("open", "您的商家入驻申请已审核通过！", "alias_" + apply.getUserId());
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+}

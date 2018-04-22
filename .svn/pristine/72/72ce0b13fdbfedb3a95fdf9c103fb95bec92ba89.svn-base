@@ -1,0 +1,128 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.service.MtSellerAccountTradeLogService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+@Controller
+@RequestMapping(value = "mt/sellerAccountTradeLog")
+public class MtSellerAccountTradeLogController extends BaseController<MtSellerAccountTradeLog> {
+	
+	private static Logger logger = Logger.getLogger(MtGoodsController.class);
+	
+	@Resource
+	private MtSellerAccountTradeLogService service;
+	/**
+	 * 获取商家账户记录
+	 */
+	@RequestMapping("getAccountTradeLogBySellerId")
+	@ResponseBody
+	public Result getAccountTradeLogBySellerId(HttpServletRequest request, @RequestParam("sellerId")String sellerId){
+		Result result = new Result();
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			
+			DetachedCriteria dc = DetachedCriteria.forClass(MtSellerAccountTradeLog.class);
+			dc.add(Property.forName("sellerId").eq(Integer.parseInt(params.get("sellerId").toString())));
+			dc.addOrder(Order.desc("tradeTime"));
+			result.setData(service.getWithPagination(dc, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商家E币余额
+	 */
+     @RequestMapping("getAcountSurplusMoeny")
+     @ResponseBody
+     public Result getAcountSurplusMoeny(HttpServletRequest request , @RequestParam("sellerId")String sellerId){
+    	 
+    	 Result result = new Result();
+		try {
+			result.setData(service.getAcountSurplusMoeny(sellerId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+    	 
+     }
+     
+     /**
+      * 商家E币充值
+      */
+     @RequestMapping("ECoinRecharge")
+     @ResponseBody
+     public Result ECoinRecharge(@RequestParam("sellerId")String sellerId , @RequestParam("voucherCenterId")String voucherCenterId,@RequestParam("number")String number){
+    	 
+    	 Result result = new Result();
+ 		try {
+ 			result.setData(service.ECoinRecharge(sellerId,voucherCenterId,number));
+ 			result.setSuccess(true);
+ 		} catch (Exception e) {
+ 			result.setSuccess(false);
+ 			result.setMessage("操作失败");
+ 			result.setError(e.getMessage());
+ 			logger.error(e);
+ 		}
+ 		return result;
+     }
+     
+     /**
+      * 商家e币转入个人账户
+      * sellerID 商家编号
+      * accountNumbers e掌柜个人账号
+      * integralAmount 转出积分个数
+      */
+     @RequestMapping("sellerIntegrateToUserAccount")
+     @ResponseBody
+     public Result sellerIntegrateToUserAccount(@RequestParam("sellerId")String sellerId , @RequestParam("accountNumbers")String accountNumbers,@RequestParam("integralNumber")int integralNumber){
+    	 
+    	 Result result = new Result();
+ 		try {
+ 			result.setData(service.sellerIntegrateToUserAccount(sellerId,accountNumbers,integralNumber));
+ 			result.setSuccess(true);
+ 		} catch (Exception e) {
+ 			result.setSuccess(false);
+ 			result.setMessage("操作失败");
+ 			result.setError(e.getMessage());
+ 			logger.error(e);
+ 		}
+ 		return result;
+     }
+}

@@ -1,0 +1,140 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtOrderInfoService extends BaseService<MtOrderInfo>{
+
+	Map<String, Object> getOrderByUserId(String userId, int page, int rows, Map<String, Object> params);
+	
+	/**
+	 * 订单状态修改
+	 * @param orderId
+	 * @param orderStatus
+	 * @return
+	 * @throws Exception
+	 */
+	public MtOrderInfo orderStatusUpdate(String orderId, int orderStatus, int operatorId) throws Exception;
+	
+	/**
+	 * 支付状态修改
+	 * @param orderId
+	 * @param payStatus
+	 * @return
+	 * @throws Exception
+	 */
+	public MtOrderInfo orderPayStatusUpdate(String orderId, int payStatus , int operatorId) throws Exception;
+
+	/**
+	 * 物流状态修改
+	 * @param orderId
+	 * @param streamStatus
+	 * @return
+	 * @throws Exception
+	 */
+	public MtOrderInfo streamStatusUpdate(String orderId, int streamStatus, int operatorId) throws Exception;
+
+	/**
+	 * 获取复杂的订单
+	 * @param id
+	 * @param status 
+	 * @return
+	 */
+	public MtOrderInfo getComplexOrder(String id);
+	
+
+	public List<MtOrderInfo> getComplexOrderBySeller(String id);
+	
+	/**
+	 * 创建订单
+	 * @param orders
+	 * @return
+	 */
+	String createOrders(List<MtOrderInfo> orders);
+	
+	
+    /**
+     * 商家修改物流同时添加到日志
+     * @param orderId
+     * @param streamCompanyNo
+     * @param trackingNo
+     * @param streamStatus
+     * @param userId 
+     * @throws Exception 
+     */
+	public MtOrderInfo shippedOrder(String orderId, String streamCompanyNo, String trackingNo, int streamStatus, String userId) throws Exception;
+	
+	/**
+	 * 用户收货
+	 * @param orderId
+	 * @param operatorId
+	 */
+	void userReceiveGoods(String orderId, int operatorId) throws Exception;
+
+	/**
+	 * 获取订单详情
+	 * @param orderId
+	 * @return
+	 */
+	Map<String, Object> getOrderDetail(String orderId);
+
+	
+	/**
+	 * 批量获取订单
+	 * @param ids
+	 * @return
+	 */
+	Map<String, Object> getOrderByIds(String[] ids);
+	
+	/**
+	 * 余额支付
+	 * @param orderIds
+	 * @param userId
+	 * @param payPwd
+	 * @return
+	 */
+	String payOrderByAccount(String[] orderIds, String userId);
+
+	/**
+	 * e币（积分）支付
+	 * @param orderIds
+	 * @param userId
+	 * @param payPwd
+	 * @return
+	 */
+	String payOrderByIntegral(String[] orderIds, String userId);
+	
+	/**
+	 * 支付宝支付
+	 * @param orderIds
+	 */
+	void payOrderByAlipay(String[] orderIds, Map<String,String> params);
+
+	/**
+	 * 根据code获取订单信息
+	 * @param code
+	 * @return
+	 */
+	Map<String, Object> getOrderDetailByCode(String code);
+
+
+	/**
+	 * 通过sellerId获取商家订单列表
+	 * @param sellerId
+	 * @param page
+	 * @param rows
+	 * @return
+	 */
+	Pagination<MtOrderInfo> getOrderListBySellerId(String sellerId, int page, int rows);
+
+	/**
+	 * 商家端商家获取订单(获取该商家用户账户下所有店铺订单)
+	 * @param userId
+	 * @return
+	 */
+	Map<String, Object> getOrderBySellerUserId(String userId, int page, int rows, Map<String,Object> params);
+}

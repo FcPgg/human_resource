@@ -1,0 +1,28 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtIntegrateExchangeLogDao;
+import com.xt.ptus.mt.entity.MtIntegrateExchangeLog;
+import com.xt.ptus.mt.service.MtIntegrateExchangeLogService;
+
+@Service
+public class MtIntegrateExchangeLogServiceImpl extends BaseServiceImpl<MtIntegrateExchangeLog> implements MtIntegrateExchangeLogService{
+
+	@Autowired MtIntegrateExchangeLogDao integrateExchangeLogDao;
+	
+	@Override
+	public MtIntegrateExchangeLog integrateExchangeLogStatus(String id, String streamCompanyNo, String trackingNo) {
+          
+        MtIntegrateExchangeLog integrateExchangeLog = integrateExchangeLogDao.get(id, MtIntegrateExchangeLog.class);
+        integrateExchangeLog.setTrackingCompany(streamCompanyNo);
+        integrateExchangeLog.setTrackingNo(trackingNo);
+        integrateExchangeLog.setStatus(Constants.INTEGRATE_GOODS_STATUS_DELIVERY);
+        integrateExchangeLogDao.update(integrateExchangeLog);
+		return integrateExchangeLog;
+	}
+
+}

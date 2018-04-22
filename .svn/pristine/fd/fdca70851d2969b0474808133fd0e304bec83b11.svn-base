@@ -1,0 +1,31 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtCreditOrder;
+
+public interface MtCreditOrderDao extends BaseDao<MtCreditOrder>{
+
+	MtCreditOrder getCreditOrderByOrderGoodsId(int orderGoodsId);
+
+	boolean checkCreditOrderExist(int orderGoodsId);
+
+	List<MtCreditOrder> getGoodsByGoodsId(String goodsId);
+
+	/**
+	 * 退款单
+	 * @return
+	 */
+	List<MtCreditOrder> getCreditOrderByRefund();
+
+	/**
+	 * 退货单物流单号
+	 * @param createOrderId
+	 * @return
+	 */
+	String getCreditOrderLogistics(String createOrderId);
+
+	String getCreditOrderStreamCompany(String creditId);
+
+}

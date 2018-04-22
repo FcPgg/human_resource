@@ -1,0 +1,10 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtTaskExeLog;
+
+public interface MtTaskExeLogDao extends BaseDao<MtTaskExeLog>{
+
+	MtTaskExeLog getLogByTaskId(String taskId);
+
+}

@@ -1,0 +1,157 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.xt.ptus.mt.entity.MtUserPublishInfo;
+import com.xt.ptus.mt.service.MtUserPublishInfoService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserPublishInfo/")
+public class MtUserPublishInfoControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtUserPublishInfoControllerMobile.class);
+	
+	@Resource
+	private MtUserPublishInfoService service;
+	
+	@ResponseBody
+	@RequestMapping("updateInfo")
+	public Result doUpdateInfo(HttpServletRequest request) {
+		Result result = new Result();
+
+		try {
+			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+			MtUserPublishInfo info = (MtUserPublishInfo) gson.fromJson(request.getParameter("entity"), MtUserPublishInfo.class);
+			if(info != null){
+				service.update(info);
+			}
+			result.setData(info);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getRecommendsInfo")
+	private Result getRecommendsInfo(@RequestParam("page")String page, @RequestParam("rows") String rows){
+		Result result = new Result();
+
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("转换分页参数失败，使用默认参数");
+		}
+		try {
+			result.setData(service.getRecommendsInfo(pager, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getInfoByCategoryId")
+	private Result getInfoByCategoryId(@RequestParam("page")String page, @RequestParam("rows") String rows, @RequestParam("categoryId") String categoryId){
+		Result result = new Result();
+
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("转换分页参数失败，使用默认参数");
+		}
+		try {
+			result.setData(service.getInfoByCategoryId(pager, limit, categoryId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getInfoByUserId")
+	private Result getInfoByUserId(@RequestParam("page")String page, @RequestParam("rows") String rows, @RequestParam("userId") String userId){
+		Result result = new Result();
+
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("转换分页参数失败，使用默认参数");
+		}
+		try {
+			result.setData(service.getInfoByUserId(pager, limit, userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+
+	@ResponseBody
+	@RequestMapping("getInfoDetail")
+	private Result getInfoDetail(@RequestParam("id")String id, @RequestParam(name = "userId", required = false)String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getInfoDetail(id, userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("remove")
+	private Result doRemove(@RequestParam("id")String id){
+		Result result = new Result();
+
+		try {
+			service.remove(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

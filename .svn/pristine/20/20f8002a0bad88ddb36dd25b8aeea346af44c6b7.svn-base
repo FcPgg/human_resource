@@ -1,0 +1,38 @@
+package com.xt.ptus.mt.service;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.ServletException;
+
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSystemAdvertisement;
+
+public interface MtSystemAdvertisementService extends BaseService<MtSystemAdvertisement>{
+
+	/**
+	 * 更新系统广告
+	 * @param myphoto
+	 * @param name
+	 * @param startTime
+	 * @param endTime
+	 * @param category 
+	 * @param goods 
+	 * @param seller 
+	 * @return
+	 * @throws Exception 
+
+	 */
+	public MtSystemAdvertisement updateAdvertisement(int attId, String name, String startTime, String endTime, String sellerId, String goodsId, int category) throws Exception;
+
+	/**
+	 * 获取有效广告
+	 * @return
+	 */
+	public List<MtSystemAdvertisement> getSystemAdvertisements();
+
+
+}

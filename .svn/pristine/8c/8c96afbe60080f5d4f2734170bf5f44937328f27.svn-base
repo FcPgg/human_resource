@@ -1,0 +1,266 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.service.MtSellerService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.StringUtil;
+
+/**
+ * 移动端商家控制器
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping("/mt/mobile/mtSeller/")
+public class MtSellerControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtSellerControllerMobile.class);
+	
+	@Resource
+	private MtSellerService service;
+	
+	@ResponseBody
+	@RequestMapping("getSellerByCategoryId")
+	public Result getSellerByCategoryId(@RequestParam("categoryId") int categoryId,
+			@RequestParam("lng") double lng,@RequestParam("lat")double lat, 
+			@RequestParam("page") String page,
+			@RequestParam("rows") String rows,
+			@RequestParam(name = "distance", required = false)String distance
+			){
+		Result result = new Result();
+		
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("传递分页数据异常，使用默认分页数据");
+		}
+		
+		try {
+			result.setData(service.getSellerByCategoryIdToMobile(categoryId, pager, limit, lng,lat, distance));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSellerByName")
+	public Result getSellerByName(@RequestParam("name") String name,
+			@RequestParam("lng") double lng,@RequestParam("lat")double lat ,
+			@RequestParam("page") int page,@RequestParam("rows")int rows ){
+		Result result = new Result();
+		try {
+			result.setData(service.getSellerByName(name, lng, lat, page, rows));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSellersByIds")
+	public Result getSellerByCategoryId(@RequestParam("ids")String ids){
+		Result result = new Result();
+
+		try {
+			String[] array = (new Gson()).fromJson(ids, new TypeToken<String[]>(){}.getType());
+			result.setData(service.getSellersByIds(array));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商家信息
+	 * @param id
+	 * @param lng
+	 * @param lat
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getSellerInfo")
+	public Result getSellerInfo(@RequestParam(value="id", required = false) String id, 
+			@RequestParam(value="lng") String lng,
+			@RequestParam(value="lat") String lat,
+			@RequestParam(value="userId", required = false) String userId){
+		Result result = new Result();
+		try {
+			double lngi =  Double.valueOf(lng);
+			double lati =  Double.valueOf(lat);
+			
+			if(!StringUtil.IsNullOrEmpty(id)){
+				result.setData(service.getSellerInfo(id, userId, lngi, lati));
+			} else {
+				result.setData(service.listSellerInfo(lngi, lati));
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSellerName")
+	public Result getSellerInfo(@RequestParam(value="name") String name){
+		Result result = new Result();
+		try {
+			result.setData(service.getSellerName(name));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取我的商铺
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getMyShops")
+	public Result getMySellersByUserInfoId(@RequestParam(value="userId") String userId){
+		Result result = new Result();
+		try {
+			result.setData(service.getMySellersByUserInfoId(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 用户关注商家
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getUserAttentedSellers")
+	public Result getUserAttentedSellers(@RequestParam("userId") String userId, @RequestParam(name = "lng", required = false)String lng, @RequestParam(name = "lat", required = false)String lat){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getAttentedSellers(userId, lng, lat));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 推荐商家
+	 * @param lng
+	 * @param lat
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getRecommendsSellers")
+	public Result getRecommendsData( @RequestParam(name = "lng", required = false)String lng, @RequestParam(name = "lat", required = false)String lat){
+		Result result = new Result();
+		
+		double lngi = 0.0;
+		double lati = 0.0;
+		try {
+			lngi =  Double.valueOf(lng);
+			lati =  Double.valueOf(lat);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+
+		try {
+			result.setData(service.getRecommendsSellers(lngi, lati));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 更新商家
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateData")
+	public Result updateData(HttpServletRequest request) {
+		Result result = new Result();
+		try {
+			MtSeller seller = (MtSeller) (new Gson()).fromJson(request.getParameter("entity"), MtSeller.class);
+			service.update(seller);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+
+	/**
+	 * 获复杂商家
+	 */
+	@ResponseBody
+	@RequestMapping("getComplexSeller")
+	public Result getComplexSeller(@RequestParam("id") String id) {
+
+		Result result = new Result();
+		try {
+			result.setData(service.getComplexSeller(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+}

@@ -1,0 +1,16 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtShopCar;
+
+public interface MtShopCarService extends BaseService<MtShopCar>{
+	public List<MtSeller> getShopCarByUserId(String userId);
+	
+	public Map<String, Object> getShopCarDataByUserId(String userId);
+
+	public MtShopCar getShopCarByParams(int userId, int sellerId, int goodsId);
+}

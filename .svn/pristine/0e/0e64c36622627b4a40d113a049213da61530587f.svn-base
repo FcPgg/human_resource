@@ -1,0 +1,80 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.service.MtUserAccountTradeLogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserAccountTradeLog/")
+public class MtUserAccountTradeLogControllerMobile extends BaseController<MtUserAccountTradeLog> {
+	
+	private static Logger logger = Logger.getLogger(MtUserAccountTradeLogControllerMobile.class);
+
+	@Resource
+	private MtUserAccountTradeLogService service;
+	
+	/**
+	 * 获取用户账户余额
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getUserBalance")
+	private Result getUserBalance(@RequestParam("userId")String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getUserBalance(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取用户交易记录
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getUserAccountHistory")
+	private Result getUserAccountHistory(@RequestParam("userId")String userId, @RequestParam("page")String page, @RequestParam("rows") String rows){
+		Result result = new Result();
+		
+		int pager = 1;
+		int limit = 10;
+		
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数");
+		}
+		
+		try {
+			result.setData(service.getUserAccountHistory(userId, pager, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

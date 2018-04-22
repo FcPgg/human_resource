@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+
+public interface MtPlatformCapitalTradeLogDao extends BaseDao<MtPlatformCapitalTradeLog>{
+
+	//可提现金额
+	double getPlatformWithdrawalsMoney();
+
+	//总金额
+	double getPlatformAllMoney();
+
+}

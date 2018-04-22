@@ -1,0 +1,30 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtUserPublishInfoAtts;
+import com.xt.ptus.mt.dao.MtUserPublishInfoAttsDao;
+
+@Repository
+public class MtUserPublishInfoAttsDaoImpl extends BaseDaoImpl<MtUserPublishInfoAtts> implements MtUserPublishInfoAttsDao{
+
+	@Override
+	public List<MtUserPublishInfoAtts> getAttsByInfoId(String infoId) {
+		return getCurrentSession().createCriteria(MtUserPublishInfoAtts.class).add(Property.forName("infoId").eq(Integer.parseInt(infoId))).list();
+	}
+
+	@Override
+	public void clearAttsByInfoId(String infoId) {
+		Session session = getCurrentSession();
+		SQLQuery query = session.createSQLQuery("DELETE FROM mt_user_publish_info_atts where info_id = ?");
+		query.setParameter(0, infoId);
+		query.executeUpdate();
+	}
+
+}

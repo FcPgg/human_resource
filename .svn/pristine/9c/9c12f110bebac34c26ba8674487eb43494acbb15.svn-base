@@ -1,0 +1,17 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtMaterialResourcesService extends BaseService<MtMaterialResources>{
+	public List<MtMaterialResources> getResourceByCatalogId(String catalogId);
+
+	public Pagination<MtMaterialResources> getResourceBySellerId(String sellerId, int page, int rows);
+
+	public void doRemoveResourcesByIdArray(String[] array);
+
+	public void doAddResources(List<MtMaterialResources> list, String sellerId) throws Exception;
+}

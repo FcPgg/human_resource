@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtTaskParams;
+
+public interface MtTaskParamsDao extends BaseDao<MtTaskParams>{
+
+	List<MtTaskParams> getParamsByTaskId(String taskId);
+
+	void removeParamsByTaskId(String ids);
+
+}

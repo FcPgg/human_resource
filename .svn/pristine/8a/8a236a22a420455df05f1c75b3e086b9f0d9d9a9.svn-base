@@ -1,0 +1,13 @@
+package com.xt.ptus.mt.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtUserReadLog;
+
+@Controller
+@RequestMapping(value = "/mt/mtUserReadLog/")
+public class MtUserReadLogController extends BaseController<MtUserReadLog> {
+	
+}

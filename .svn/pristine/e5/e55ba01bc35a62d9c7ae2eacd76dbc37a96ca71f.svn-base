@@ -1,0 +1,16 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserSignInLog;
+
+public interface MtUserSignInLogService extends BaseService<MtUserSignInLog>{
+
+	String userSignIn(String userId) throws Exception;
+
+	List<MtUserSignInLog> getUserSignInLog(String userId);
+
+	boolean getTodayUserSignInLog(String userId) throws Exception;
+
+}

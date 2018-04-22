@@ -1,0 +1,143 @@
+<%@ page language="java" contentType="text/html; charset=utf-8"
+	pageEncoding="utf-8"%>
+<html class="no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<%@ include file="../../common.jsp"%>
+ 
+    
+</head>
+<body >
+<div class=" admin-content">     
+			<input id="currentUserId" style="display: none;" value="<%= currentUser != null ? currentUser.getId() : null%>"/>
+			
+			<div class="am-panel am-panel-default">
+			  <div class="am-panel-hd">限时抢购
+			   <button type="button" class="am-btn am-btn-danger am-round am-btn-xs am-icon-plus" id="savePanicPage" style="margin-left:90%">添加限时抢</button>
+			  </div>  	
+			
+			
+				<div class=" admin-content">     
+			<div class="am-panel am-panel-default">
+			  <div class="am-panel-bd">
+			  	<hr/>
+		          <table class="am-table am-table-bordered am-table-radius am-table-striped table-condensed  table-striped">
+		            <thead >
+		              <tr class="am-default " id="apply-table-head">
+			                <th class="name" style="width: 150px;">标题</th>
+			                <th class="sellerName" style="width: 150px;">商家名称</th>
+			                <th class="goodsName" style="width: 150px;">商品名称</th>
+			                <th class="concessionalRate" style="width: 150px;">优惠价格</th>
+		                 	<th class="startTime" style="width: 150px;">开始时间</th>
+		                  	<th class="endTime" style="width: 150px;">结束时间</th>		
+		                 	<th class="creator" style="width: 150px;">创建者</th>
+		                    <th class="createTime" style="width: 150px;">创建时间</th>
+		                    <th width="163px">操作</th>
+		              </tr>
+		            </thead>
+		            <tbody id="applyList">
+		            </tbody>
+		          </table>
+      				<div id="example" style="text-align: center"> <ul id="pageLimit" class="pagination"></ul> </div>
+			  </div>
+			</div>
+		</div>
+	  </div>
+	</div>
+
+</body>
+<script>
+  
+	
+	
+$(function(){
+	loadData(1);
+});
+
+function loadData(page){
+	
+	var params = {page: page, rows: 10};
+	
+	$.post("mt/panicBuying/listNormalPanicBuying", params, function(r){				
+		if(r.success){
+			if(r.data){
+				$("#applyList").children().remove();
+				applyList(r.data.data);
+				$.jqPaginator('#pageLimit',{
+					totalPages: r.data.totalPageNum,
+			        visiblePages: 10,
+			        currentPage: page,
+			        prev: '<li class="prev"><a href="javascript:;">上一页</a></li>',
+			        next: '<li class="next"><a href="javascript:;">下一页</a></li>',
+			        page: '<li class="page"><a href="javascript:;">{{page}}</a></li>',
+				    onPageChange: function (num, type) {
+				    	if(type == "change"){
+				    		loadData(num);
+				    	}
+				    }
+				});
+			}
+		}
+	});
+}
+
+//构建限时抢商品列表
+function applyList(d){
+	 $.each(d, function(){
+		var tr = "<tr>"
+		var item = this; 
+	 	$.each($("#apply-table-head").children(), function(){
+	 		if($(this).attr("class") != null){
+		 		var td = "<td style='" + ($(this).attr("style") != null ? $(this).attr("style") : "") + "' class='" + $(this).attr("class") + "'>"
+		 		td += (item[$(this).attr("class")] != null ? item[$(this).attr("class")] : "");
+		 		td += "</td>";
+		 		tr += td;
+	 		}
+	 	});
+	 	tr += '<td><div class="am-btn-group am-btn-group-xs">';
+	 	tr += '<a class="am-btn am-btn-default am-btn-xs am-text-success am-round" onclick="doUpdatePanicBuying(id = '+this.id+')" title="修改"><span class="am-icon-pencil-square-o"></span> </a>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="移除" );"><span class="am-icon-times"></span></button>';
+	 	tr += '</div></td>';
+	 	tr += "</tr>";
+		$("#applyList").append(tr);
+	  });
+}
+
+
+/**
+*t添加商家
+*/
+$(document).ready(function(){
+	  $("#savePanicPage").click(function(){
+		   $("#dialogs").modal("show");
+		   $("#dialogLabel").html('添加限时抢购');
+	  });
+});
+
+
+/**
+ * 修改限时抢
+ */
+function doUpdatePanicBuying(id){
+	$.post("mt/panicBuying/get",{'id':id},function(r){
+		if(r.success){
+			 $("#name").val(r.data.name),
+	       	 $("#startTime").val(r.data.startTime),
+	       	 $("#endTime").val(r.data.endTime),
+	         $("#number").val(r.data.number),
+	       	 $("#goods").val(r.data.goodsId),
+			 $("#seller").val(r.data.sellerId),
+			 $("#concessionalRate").val(r.data.concessionalRate),
+			 $("#limitNumber").val(r.data.limitNumber)
+			 $("#panicBuyId").val(r.data.id)
+			 
+			 $("#dialogs").modal("show");
+			 $("#dialogLabel").html('添加限时抢购');
+		}
+	})
+}
+</script>
+
+<jsp:include page="./panic_buying_editor.jsp"></jsp:include>	
+</html>

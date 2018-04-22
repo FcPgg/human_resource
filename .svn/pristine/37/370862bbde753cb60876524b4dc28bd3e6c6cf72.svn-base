@@ -1,0 +1,68 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.dao.MtPanicBuyingDao;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.obejcts.Pagination;
+
+@Repository
+public class MtPanicBuyingDaoImpl extends BaseDaoImpl<MtPanicBuying> implements MtPanicBuyingDao {
+
+	// 正在抢购
+	@Override
+	public Pagination<MtPanicBuying> getPanicBuyingList(int page, int rows) {
+		Date date = new Date();
+		DetachedCriteria criteria = DetachedCriteria.forClass(MtPanicBuying.class);
+		criteria.add(Restrictions.le("startTime", date));
+		criteria.add(Restrictions.ge("endTime", date));
+
+		return this.findByPagination(criteria, page, rows, Order.desc("createTime"));
+
+	}
+
+	// 即将开始/获取即将结束
+	@Override
+	public List<MtPanicBuying> getBeginMinuteList(String id) {
+		Criteria criteria = getCurrentSession().createCriteria(MtPanicBuying.class);
+		criteria.add(Property.forName("id").eq(id));
+		List PanicBuying = criteria.list();
+		return PanicBuying;
+	}
+
+	@Override
+	public Pagination<MtPanicBuying> getReadyToStartGoods(int page, int rows) {
+		Date date = new Date();
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		calendar.set(Calendar.HOUR, calendar.get(Calendar.HOUR) + 1);
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtPanicBuying.class);
+		dc.add(Property.forName("startTime").ge(date)).add(Property.forName("startTime").le(calendar.getTime()));
+		
+		return this.findByPagination(dc, page, rows, Order.desc("createTime"));
+	}
+	
+	@Override
+	public Pagination<MtPanicBuying> getReadyToEndGoods(int page, int rows) {
+		Date date = new Date();
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		calendar.set(Calendar.HOUR, calendar.get(Calendar.HOUR) + 1);
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtPanicBuying.class);
+		dc.add(Property.forName("endTime").ge(date)).add(Property.forName("endTime").le(calendar.getTime()));
+		
+		return this.findByPagination(dc, page, rows, Order.desc("createTime"));
+	}
+}

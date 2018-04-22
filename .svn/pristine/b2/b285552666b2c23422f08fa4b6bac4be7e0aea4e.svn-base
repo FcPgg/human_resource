@@ -1,0 +1,19 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtPlatformCapitalTradeLogService extends BaseService<MtPlatformCapitalTradeLog>{
+
+	 Pagination<MtPlatformCapitalTradeLog> getPlatformCapitalTradeLog(int pager, int limit);
+
+	double platformWithdrawalsMoney();
+
+	MtPlatformCapitalTradeLog platformWithdrawals(double alipayAmount, String alipayAccountNumber);
+
+	double platformAllMoney();
+
+}

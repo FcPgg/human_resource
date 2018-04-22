@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSecondLevelCategory;
+
+public interface MtSecondLevelCategoryService extends BaseService<MtSecondLevelCategory>{
+
+	List<MtSecondLevelCategory> getDataBySellerId(String sellerId);
+
+	public MtSecondLevelCategory  getCategoryById(String id);
+
+}

@@ -1,0 +1,60 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.service.MtPrizesService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtPrizes/")
+public class MtPrizesControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtPrizesControllerMobile.class);
+	
+	@Resource
+	private MtPrizesService service;
+	
+	@ResponseBody
+	@RequestMapping("getPrizes")
+	private Result getPrizes(){
+		Result result = new Result();
+
+		try {
+			result.setData(service.list());
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 中奖
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("lotteryDraw")
+	private Result lotteryDraw(@RequestParam("userId") String userId, @RequestParam("prizeId") String prizeId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.lotteryDraw(userId, prizeId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}	
+}

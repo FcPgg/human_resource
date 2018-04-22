@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtSellerAttachment;
+import com.xt.ptus.mt.service.MtSellerAttachmentService;
+
+@Service
+public class MtSellerAttachmentServiceImpl extends BaseServiceImpl<MtSellerAttachment> implements MtSellerAttachmentService{
+
+}

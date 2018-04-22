@@ -1,0 +1,22 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSignIn;
+
+public interface MtSignInDao extends BaseDao<MtSignIn>{
+
+	/**
+	 * 获取今日签到信息
+	 * @param dayNo String [1,2,3,4,5,6,7]
+	 * @return
+	 */
+	MtSignIn getSignInfoByDayNo(String dayNo);
+
+	/**
+	 * 获取下一天的签到信息
+	 * @param signInId
+	 * @return
+	 */
+	MtSignIn getNextSignInfo(int signInId);
+
+}

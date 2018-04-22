@@ -1,0 +1,8 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+
+public interface MtIntegrateDao extends BaseDao<MtIntegrate>{
+	public int getUserIntegrate(int userId);
+}

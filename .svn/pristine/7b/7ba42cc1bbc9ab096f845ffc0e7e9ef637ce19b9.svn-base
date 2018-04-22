@@ -1,0 +1,64 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSecondhandContainerCategory;
+import com.xt.ptus.mt.service.MtSecondhandContainerCategoryService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.sys.service.SysDictionaryDatasService;
+import com.xt.ptus.util.StringUtil;
+
+@Controller
+@RequestMapping(value = "/mt/mtSecondhandContainerCategory/")
+public class MtSecondhandContainerCategoryController extends BaseController<MtSecondhandContainerCategory> {
+	
+	private static Logger logger = Logger.getLogger(MtSecondhandContainerCategoryController.class);
+	
+	@Resource
+	private MtSecondhandContainerCategoryService service;
+	
+	@Resource
+	private SysDictionaryDatasService dictService;
+	
+	@RequestMapping("showEditor")
+	private ModelAndView showEditor(@RequestParam(name = "id", required = false) String id){
+		ModelAndView mav = new ModelAndView("mt/secondhand_container_category/editor");
+		if(!StringUtil.IsNullOrEmpty(id)){
+			mav.addObject("entity", service.getComplexData(id));
+			mav.addObject("dictionaryData", dictService.getDictionaryByCode("mtDictionarys", null));
+			mav.addObject("dictionary", dictService.getDictionaryByCode("mtControlType", null));
+		}
+		return mav;
+	}
+	
+	@ResponseBody
+	@RequestMapping("doUpdate")
+	private Result doUpdate(HttpServletRequest request){
+		Result result = new Result();
+
+		try {
+			Object obj = fromJSON(request.getParameter("entity"), MtSecondhandContainerCategory.class);
+			MtSecondhandContainerCategory mscc = (MtSecondhandContainerCategory) obj;
+			if(mscc != null){
+				service.update(mscc);
+			}
+			result.setData(mscc);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

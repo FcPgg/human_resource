@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSellerAmount;
+
+public interface MtSellerAmountService extends BaseService<MtSellerAmount>{
+
+	double getAmountMoeny(String sellerId);
+
+	MtSellerAmount sellerWithdrawals(String sellerId, double alipayAmount,String alipayAccountNumber);
+
+}

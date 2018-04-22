@@ -1,0 +1,39 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.service.MtSignInService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtSignIn/")
+public class MtSignInControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtSignInControllerMobile.class);
+	
+	@Resource
+	private MtSignInService service;
+
+	@ResponseBody
+	@RequestMapping("getSignInData")
+	private Result showEditor(HttpServletRequest request){
+		Result result = new Result();
+
+		try {
+			result.setData(service.list());
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

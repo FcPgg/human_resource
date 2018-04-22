@@ -1,0 +1,68 @@
+<%@page import="com.xt.ptus.mt.entity.MtUserInfo"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%
+	String path = request.getContextPath();
+	String basePath = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + path + "/";
+%>
+<base href="<%=basePath%>">
+
+<% MtUserInfo currentUser = (MtUserInfo)request.getSession().getAttribute("currentUser"); %>
+
+<meta charset="utf-8" />
+<meta name="keywords" content="index">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="renderer" content="webkit">
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<link rel="icon" type="image/png" href="static/amaze/assets/i/favicon.png">
+<link rel="apple-touch-icon-precomposed" href="static/amaze/assets/i/app-icon72x72@2x.png">
+<meta name="apple-mobile-web-app-title" content="Amaze UI" />
+<link rel="stylesheet" href="static/amaze/assets/css/amazeui.min.css" />
+<link rel="stylesheet" href="static/amaze/assets/css/admin.css">
+
+<script src="static/amaze/assets/js/jquery.min.js"></script>
+
+<!-- jquery plugins -->
+<script type="text/javascript" src="static/assets/js/jqPaginator.js"></script>
+<script type="text/javascript" src="static/assets/js/bootstrap-slider.js"></script>
+<script type="text/javascript" src="static/assets/js/jquery.validate.min.js"></script>
+
+<!-- <script src="static/amaze/assets/js/app.js"></script> -->
+<script src="static/amaze/assets/js/amazeui.min.js"></script>
+<link rel="stylesheet" href="static/amaze/assets/css/admin.css">
+<!-- <script src="static/amaze/assets/js/app.js"></script> -->
+<script src="static/amaze/assets/js/amazeui.min.js"></script>
+<!-- Bmap -->
+<script src="static/amaze/assets/js/amazeui.min.js"></script>
+
+<!-- ace -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="static/assets/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="static/assets/css/font-awesome.min.css" />
+<link rel="stylesheet" href="static/assets/css/ace.min.css" />
+<link rel="stylesheet" href="static/assets/css/ace-rtl.min.css" />
+<link rel="stylesheet" href="static/assets/css/ace-skins.min.css" />
+<script src="static/assets/js/ace-extra.min.js"></script>
+
+
+<script src="static/assets/js/bootstrap-tab.js"></script>
+<script src="static/assets/js/bootstrap.min.js"></script>
+<script src="static/assets/js/typeahead-bs2.min.js"></script>
+<script src="static/assets/js/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="static/assets/js/jquery.ui.touch-punch.min.js"></script>
+<script src="static/assets/js/jquery.slimscroll.min.js"></script>
+<script src="static/assets/js/jquery.easy-pie-chart.min.js"></script>
+<script src="static/assets/js/jquery.sparkline.min.js"></script>
+<script src="static/assets/js/flot/jquery.flot.min.js"></script>
+<script src="static/assets/js/flot/jquery.flot.pie.min.js"></script>
+<script src="static/assets/js/flot/jquery.flot.resize.min.js"></script>
+<script src="static/assets/js/ace-elements.min.js"></script>
+<script src="static/assets/js/ace.min.js"></script>
+
+<!-- bootstrap dialog -->
+<link rel="stylesheet" href="static/assets/bootstrap-dialog/css/bootstrap-dialog.css" />
+<script src="static/assets/bootstrap-dialog/js/bootstrap-dialog.js"></script>
+<script src="static/assets/bootstrap-dialog/js/bootstrap-dialog-ext.js"></script>
+
+<script type="text/javascript" src="static/js/md5.js"></script>

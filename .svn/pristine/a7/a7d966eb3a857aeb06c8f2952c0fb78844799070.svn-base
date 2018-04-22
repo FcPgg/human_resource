@@ -1,0 +1,94 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import java.util.List;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.mt.service.MtMaterialResourcesService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtMaterialResources/")
+public class MtMaterialResourcesControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtMaterialResourcesControllerMobile.class);
+	
+	@Resource
+	private MtMaterialResourcesService service;
+	
+	@ResponseBody
+	@RequestMapping("getResourceBySellerId")
+	public Result getResourceBySellerId(@RequestParam("sellerId") String sellerId, @RequestParam("page") String page, @RequestParam("rows") String rows) {
+		Result result = new Result();
+		
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数");
+		}
+		
+		try {
+			result.setData(service.getResourceBySellerId(sellerId, pager, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+		}
+		
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("remove")
+	public Result doRemove(@RequestParam("ids") String ids) {
+		Result result = new Result();
+		
+		String[] array = (new Gson()).fromJson(ids, new TypeToken<String[]>(){}.getType());
+		
+		try {
+			service.doRemoveResourcesByIdArray(array);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+		}
+		
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("addResources")
+	public Result addResources(@RequestParam("resources") String resources, @RequestParam("sellerId") String sellerId) {
+		Result result = new Result();
+		
+		List< MtMaterialResources> list = (new Gson()).fromJson(resources, new TypeToken<List< MtMaterialResources>>(){}.getType());
+		
+		try {
+			service.doAddResources(list, sellerId);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+		}
+		
+		return result;
+	}
+}

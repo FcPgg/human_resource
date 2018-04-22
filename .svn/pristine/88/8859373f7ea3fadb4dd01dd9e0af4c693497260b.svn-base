@@ -1,0 +1,134 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.ProjectionList;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtSellerDao;
+import com.xt.ptus.mt.entity.MtRecommendsData;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtUserAttention;
+import com.xt.ptus.mt.pojo.MtSellerPojo;
+import com.xt.ptus.util.DistanceUtil;
+import com.xt.ptus.util.StringUtil;
+
+@Repository
+public class MtSellerDaoImpl extends BaseDaoImpl<MtSeller> implements MtSellerDao{
+	
+	@Override
+	public List<MtSeller> getSellerByName(String name){
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class);
+		criteria.add(Property.forName("name").eq(name));
+		List seller = criteria.list();
+		return  seller;
+	}
+
+	@Override
+	public List<MtSeller> getSellerByCategoryId(int categoryId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtSeller.class);
+		dc.add(Property.forName("categoryId").eq(categoryId));
+		return this.findByPagination(dc, page, rows, "id").getData();
+	}
+
+	@Override
+	public List<MtSellerPojo> getSellerByIds(String[] array) {
+		
+		List<MtSellerPojo> result = new ArrayList<MtSellerPojo>();
+		
+		List<MtSeller> list =  getCurrentSession().createCriteria(MtSeller.class).add(Property.forName("id").in(array)).list();
+		
+		if(list != null && list.size() > 0){
+			for(MtSeller seller : list){
+				MtSellerPojo pojo = new MtSellerPojo();
+				pojo.pojoParser(seller);
+				result.add(pojo);
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * 用户关注商家
+	 */
+	@Override
+	public List<MtSellerPojo> getAttentedSellers(String userId, String lng, String lat) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class);
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserAttention.class);
+		dc.add(Property.forName("category").eq(Constants.USER_ATTENTION_CATEGORY_SELLER));
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		dc.setProjection(Property.forName("attentionId"));
+		criteria.add(Property.forName("id").in(dc));
+		List<MtSeller> list = criteria.list();
+		if(list != null && list.size() > 0){
+			List<MtSellerPojo> pojos = new ArrayList<MtSellerPojo>();
+			for(MtSeller seller : list){
+				MtSellerPojo pojo = new MtSellerPojo();
+				
+				pojo.pojoParser(seller);
+				
+				if(!StringUtil.IsNullOrEmpty(lng) && !StringUtil.IsNullOrEmpty(lat)){
+					pojo.setDistance(DistanceUtil.getDistance( Double.valueOf(seller.getLng()),  Double.valueOf(seller.getLat()), Double.valueOf(lng), Double.valueOf(lat))/1000);
+				}
+				
+				pojos.add(pojo);
+			}
+			return pojos;
+		}
+		return null;
+	}
+
+	@Override
+	public int getNewSeller(String name) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class);
+		criteria.add(Property.forName("name").eq(name));
+		criteria.setProjection(Projections.groupProperty("id"));
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	@Override
+	public List<MtSeller> getRecommendsSellers() {
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class);
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtRecommendsData.class);
+		dc.setProjection(Projections.property("sellerId"));
+		dc.add(Property.forName("goodsId").eq(0));
+	
+		criteria.add(Property.forName("id").in(dc));
+		
+		return criteria.list();
+	}
+
+	@Override
+	public List<MtSeller> getSellerName(String name) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class, "seller");
+		
+		ProjectionList projectionList = Projections.projectionList();  
+		projectionList.add(Projections.property("seller.id").as("id"));  
+		projectionList.add(Projections.property("seller.name").as("name"));  
+		criteria.setProjection(projectionList);
+		
+		criteria.setResultTransformer(Transformers.aliasToBean(MtSeller.class));
+		criteria.add(Property.forName("name").like("%" + name + "%"));
+		return criteria.list();
+	}
+
+	@Override
+	public List<MtSeller> getMySellersByUserInfoId(String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSeller.class);
+		criteria.add(Property.forName("userInfoId").eq(Integer.parseInt(userId)));
+		
+		return criteria.list();
+	}
+
+}

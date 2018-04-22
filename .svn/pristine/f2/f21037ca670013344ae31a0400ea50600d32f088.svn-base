@@ -1,0 +1,98 @@
+package com.xt.ptus.mt.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Projection;
+import org.hibernate.criterion.ProjectionList;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtOrderGoods;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.dao.MtOrderGoodsDao;
+
+@Repository
+public class MtOrderGoodsDaoImpl extends BaseDaoImpl<MtOrderGoods> implements MtOrderGoodsDao {
+
+	@Override
+	public List<MtOrderGoods> getOrderGoodsByOrderId(int orderId) {
+		return getCurrentSession().createCriteria(MtOrderGoods.class).add(Property.forName("orderId").eq(orderId)).list();
+	}
+
+	@Override
+	public List<MtOrderGoods> getGoodsByOrderId(String id, int status) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderGoods.class);
+		criteria.add(Property.forName("orderId").eq(Integer.parseInt(id)));
+		if (status == 1) {
+			criteria.add(Property.forName("status").eq(Integer.parseInt("1")));
+		}
+		List goods = criteria.list();
+		return goods;
+	}
+
+	@Override
+	public MtOrderGoods getGoodsByOrderGoodsId(int orderGoodsId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderGoods.class);
+		criteria.add(Property.forName("id").eq(String.valueOf(orderGoodsId)));
+		return (MtOrderGoods) criteria.uniqueResult();
+	}
+
+	/**
+	 * 商品总销量
+	 */
+	@Override
+	public int getGoodsSaleCount(String goodsId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderGoods.class);
+		criteria.add(Property.forName("goodsId").eq(Integer.parseInt(goodsId)));
+
+		criteria.setProjection(Projections.rowCount());
+
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+
+	/**
+	 * 商品月销量
+	 */
+	@Override
+	public int getGoodsMonthSaleCount(String goodsId) {
+		// TODO 自动生成的方法存根
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+
+		DetachedCriteria dc = DetachedCriteria.forClass(MtOrderGoods.class);
+		dc.setProjection(Property.forName("orderId"));
+
+		dc.add(Property.forName("goodsId").eq(Integer.parseInt(goodsId)));
+
+		dc.add(Property.forName("id").in(dc));
+
+		Calendar cale = Calendar.getInstance();
+
+		// 获取当月第一天和最后一天
+		  Date firstday;
+	      Date lastday;
+		// 获取前月的第一天
+		cale = Calendar.getInstance();
+		cale.add(Calendar.MONTH, 0);
+		cale.set(Calendar.DAY_OF_MONTH, 1);
+		firstday = cale.getTime();
+		// 获取前月的最后一天
+		cale = Calendar.getInstance();
+		cale.add(Calendar.MONTH, 1);
+		cale.set(Calendar.DAY_OF_MONTH, 0);
+		lastday = cale.getTime();
+
+		criteria.add(Property.forName("receivedTime").between(firstday, lastday));
+
+		criteria.setProjection(Projections.rowCount());
+
+		return Integer.parseInt(criteria.uniqueResult().toString());
+	}
+}

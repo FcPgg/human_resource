@@ -1,0 +1,15 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtIntegrateGoods;
+
+public interface MtIntegrateGoodsService extends BaseService<MtIntegrateGoods>{
+
+	//移除商品（下架，不是真正删除数据）
+	public MtIntegrateGoods doDelGoods(String id, String removetor);
+
+	public void updateGood(MtIntegrateGoods good, String operatorId);
+
+	public void exchangeGoods(String userId, String integrateId, int count, String address, String receivor, String phoneNumber) throws Exception;
+
+}

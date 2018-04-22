@@ -1,0 +1,13 @@
+package com.xt.ptus.mt.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSellerAttachment;
+
+@Controller
+@RequestMapping(value = "mt/sellerAttachment")
+public class MtSellerAttachmentController extends BaseController<MtSellerAttachment> {
+	
+}

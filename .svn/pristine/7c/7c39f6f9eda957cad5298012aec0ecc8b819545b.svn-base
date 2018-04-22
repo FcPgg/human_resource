@@ -1,0 +1,16 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+
+public interface MtTaskListDao extends BaseDao<MtTaskList>{
+	
+	public MtTaskList addTask(String chanel, String executeTime, String serviceName, String methodName, List<MtTaskParams> params) throws Exception;
+
+	public void removeTaskByTaskId(String id);
+
+	
+}

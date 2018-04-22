@@ -1,0 +1,25 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtOrderOperateLog;
+import com.xt.ptus.mt.dao.MtOrderOperateLogDao;
+
+@Repository
+public class MtOrderOperateLogDaoImpl extends BaseDaoImpl<MtOrderOperateLog> implements MtOrderOperateLogDao{
+
+	@Override
+	public String getTaskIdByOrderId(String orderId , int category) {
+		Criteria criteria = getCurrentSession().createCriteria(MtOrderOperateLog.class);
+		criteria.add(Property.forName("orderId").eq(Integer.parseInt(orderId)));
+		criteria.add(Property.forName("category").eq(category));
+		criteria.setProjection(Projections.groupProperty("taskId"));   
+		return criteria.uniqueResult().toString();
+	}
+
+}

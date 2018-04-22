@@ -1,0 +1,580 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.helper.JPushHelper;
+import com.xt.ptus.mt.dao.MtCreditOrderAttachementsDao;
+import com.xt.ptus.mt.dao.MtCreditOrderDao;
+import com.xt.ptus.mt.dao.MtGoodsDao;
+import com.xt.ptus.mt.dao.MtMoneyFlowDao;
+import com.xt.ptus.mt.dao.MtOrderGoodsDao;
+import com.xt.ptus.mt.dao.MtOrderInfoDao;
+import com.xt.ptus.mt.dao.MtOrderOperateLogDao;
+import com.xt.ptus.mt.dao.MtPanicBuyingDao;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtTaskListDao;
+import com.xt.ptus.mt.dao.MtTaskParamsDao;
+import com.xt.ptus.mt.dao.MtUserAccountTradeLogDao;
+import com.xt.ptus.mt.entity.MtCreditOrder;
+import com.xt.ptus.mt.entity.MtCreditOrderAttachements;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtGoodsValuation;
+import com.xt.ptus.mt.entity.MtMoneyFlow;
+import com.xt.ptus.mt.entity.MtOrderGoods;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtOrderOperateLog;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtTaskList;
+import com.xt.ptus.mt.entity.MtTaskParams;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.service.MtCreditOrderService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.sys.dao.SysDictionaryDatasDao;
+import com.xt.ptus.util.DateUtil;
+
+@Service
+public class MtCreditOrderServiceImpl extends BaseServiceImpl<MtCreditOrder> implements MtCreditOrderService{
+
+	@Autowired
+	private MtCreditOrderDao creditOrderDao;
+	
+	@Autowired
+	private MtOrderGoodsDao orderGoodsDao;
+	
+	@Autowired
+	private MtOrderInfoDao orderDao;
+	
+	@Autowired 
+	private MtCreditOrderAttachementsDao attachementsDao;
+	
+	@Autowired
+	private MtGoodsDao goodsDao;
+	
+	@Autowired
+	private MtMoneyFlowDao moneyFlowDao;
+	
+	@Autowired 
+	private MtPlatformCapitalTradeLogDao platformCapitalTradeLogDao;
+	
+	@Autowired
+	private MtPanicBuyingDao panicBuyingDao;
+	
+	@Autowired
+	private SysDictionaryDatasDao SysDictionaryDatasDao;
+	
+	@Autowired
+	private MtTaskListDao taskListDao;
+	
+	@Autowired
+	private MtOrderOperateLogDao logDao;
+	
+	@Autowired
+	private MtTaskParamsDao taskParamsDao;
+	
+	@Autowired
+	private MtUserAccountTradeLogDao userAccountTradeLogDao;
+	
+	@Override
+	public void beforeInsert(MtCreditOrder t) {
+		t.setCreateTime(new Date());
+	}
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+	
+	/**
+	 * 创建日志
+	 * 
+	 * @param t
+	 */
+	private void createOrderLog(String orderId, int operatorId, int category, String remark , String taskId) {
+		MtOrderOperateLog log = new MtOrderOperateLog();
+
+		log.setOrderId(Integer.parseInt(orderId));
+		log.setOperator(operatorId);
+		log.setCategory(category);
+		log.setTaskId(taskId);
+		log.setOperateTime(new Date());
+		log.setRemark(remark);
+
+		logDao.save(log);
+	}
+
+	/**
+	 * 创建退货单
+	 */
+	@Override
+	public void createCreditOrder(MtCreditOrder cOrder) {
+		cOrder.setStatus(Constants.CREDIT_ORDER_STATUS_APPLY_FOR_RETURN);
+		this.update(cOrder);
+	}
+	
+
+	@Override
+	public void afterInsert(MtCreditOrder t) {
+		//添加退货单后修改订单中的商品状态并且记录日志
+		MtOrderGoods goods = orderGoodsDao.get(String.valueOf(t.getOrderGoodsId()), MtOrderGoods.class);
+		if(goods != null){
+			goods.setStatus(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_YES);
+			orderGoodsDao.update(goods);
+			
+			MtOrderInfo order = orderDao.get(String.valueOf(t.getOrderId()), MtOrderInfo.class);
+			if(order != null){
+				order.setIfReturnGoods(Constants.ORDER_GOODS_STATUS_IF_RETURN_GOODS_YES);
+				
+				if(!checkIfExists(t.getOrderGoodsId()))
+					orderDao.update(order);
+			}
+			
+			//申请退货后，删除自动打款到商家任务
+			//从订单日志中获取taskId
+			int category = Constants.ORDER_OPERATE_LOG_RECEIVE;
+			String taskId = logDao.getTaskIdByOrderId(String.valueOf(t.getOrderId()),category);
+			taskParamsDao.removeParamsByTaskId(String.valueOf(taskId));
+			taskListDao.removeTaskByTaskId(String.valueOf(taskId));
+			
+			//创建退货单后，创建自动定时任务，商家2天未同意退货，自动打款到商家
+			String chanel = "autoPayToSellerImpl";
+			String serviceName = "mtOrderInfoServiceImpl";
+			String methodName = "payToSellerImpl";
+			String executeTime;
+			try {
+				executeTime = String.valueOf(DateUtil.getXdaysLater(2));
+				ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+				MtTaskParams params1 = new MtTaskParams();
+				params1.setName("订单编号");
+				params1.setParamName("orderId");
+				params1.setDataType("String");
+				params1.setValue(String.valueOf(t.getOrderId()));
+				list.add(params1);
+				MtTaskParams params2 = new MtTaskParams();
+				params2.setName("操作人编号");
+				params2.setParamName("operatorId");
+				params2.setDataType("String");
+				params2.setValue(null);
+				list.add(params2);
+				MtTaskList taskList = taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+				
+				//创建订单操作日志
+				createOrderLog(order.getId(), order.getUserId(), Constants.ORDER_OPERATE_LOG_RETURN_GOOD, "用户申请退款",taskList.getId());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+
+	/**
+	 * 更新物流信息
+	 */
+	@Override
+	public void updateStreamInfo(String streamCompany, String streamNo, int orderGoodsId) {
+		MtCreditOrder creditOrder = creditOrderDao.getCreditOrderByOrderGoodsId(orderGoodsId);
+		if(creditOrder != null){
+			creditOrder.setStreamNo(streamNo);
+			creditOrder.setStreamCompany(streamCompany);
+			creditOrder.setStatus(Constants.CREDIT_ORDER_STATUS_SHIPPED);
+			creditOrder.setShippedTime(new Date());
+			creditOrderDao.update(creditOrder);
+
+		//获取退款用户Id
+		int userId = orderDao.getUserIdByOrderId(String.valueOf(creditOrder.getOrderId()));
+		//买家发货后，删除：买家两天不发货自动打款到商家任务
+		//从订单日志中获取taskId
+		int category = Constants.ORDER_OPERATE_LOG_SELLER_SUCCESS_RETURN_GOOD;
+		String taskId = logDao.getTaskIdByOrderId(String.valueOf(creditOrder.getOrderId()),category);
+		taskParamsDao.removeParamsByTaskId(taskId);
+		taskListDao.removeTaskByTaskId(taskId);
+		
+		//买家发货后，创建自动定时任务，卖家7天未收货，自动收货
+		String chanel = "autoGoodsReceiptBySeller";
+		String serviceName = "mtCreditOrderServiceImpl";
+		String methodName = "goodsReceipt";
+		String executeTime;
+		try {
+			executeTime = String.valueOf(DateUtil.getXdaysLater(7));
+			ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+			MtTaskParams params = new MtTaskParams();
+			params.setName("退货单编号");
+			params.setParamName("createOrderId");
+			params.setDataType("String");
+			params.setValue(String.valueOf(creditOrder.getId()));
+			list.add(params);
+			MtTaskList taskList = taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+			
+			//创建订单操作日志
+			createOrderLog(String.valueOf(creditOrder.getOrderId()), userId, Constants.ORDER_OPERATE_LOG_USER_DELIVERY, "买家发货",taskList.getId());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  }
+	}
+	
+	private boolean checkIfExists(int orderGoodsId){
+		return creditOrderDao.checkCreditOrderExist(orderGoodsId);
+	}
+	
+	/**
+	 * 商家所有退货单
+	 */
+	@Override
+	public List<MtCreditOrder> getCreditOrder(String sellerId) {
+		Session session = getCurrentSession();
+		DetachedCriteria inGoodsIdCriteria = DetachedCriteria.forClass(MtGoods.class);
+		inGoodsIdCriteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		inGoodsIdCriteria.setProjection(Property.forName("id"));
+
+		// 获取退货商品列表
+		Criteria creditOrderCri = session.createCriteria(MtCreditOrder.class);
+		creditOrderCri.add(Property.forName("goodsId").in(inGoodsIdCriteria));
+		List<MtCreditOrder> list = creditOrderCri.list();
+		return list;
+	}
+	/**
+	 * 退货单详情
+	 */
+	@Override
+	public MtCreditOrder getCreditOrderInfo(String creditId,String orderId){
+		double goodsPrice = 0.0;
+		double sum = 0.0;
+		String spec = null;
+		MtCreditOrder creditOrder = creditOrderDao.get(creditId, MtCreditOrder.class);
+		
+		//获取原订单信息
+		MtOrderInfo order = orderDao.get(orderId, MtOrderInfo.class);
+		
+		//获取退货单商品信息
+		MtOrderGoods orderGoods = orderGoodsDao.getGoodsByOrderGoodsId(creditOrder.getOrderGoodsId());//退货商品
+		goodsPrice = orderGoods.getPrice();
+		spec = orderGoods.getSpec();
+		sum = goodsPrice * creditOrder.getCount();
+		creditOrder.setPrice(goodsPrice);
+		creditOrder.setSum(sum);
+		creditOrder.setSpec(spec);
+		
+		//获取买家退货照片
+		List<MtCreditOrderAttachements> attachements = attachementsDao.getAttachementsIdByCreditId(creditId);
+		creditOrder.setAttachements(attachements);
+		creditOrder.setOrderInfo(order);
+		
+		return creditOrder;
+	}
+	
+//	/**
+//	 * 同意或不同意退款
+//	 */
+//	@Override
+//	public MtCreditOrder returnStatusUpdate(String createOrderId, int status,String disaggreeReason) {
+//		MtCreditOrder creditOrder = creditOrderDao.get(createOrderId, MtCreditOrder.class);
+//		creditOrder.setStatus(status);
+//		creditOrder.setCreateTime(new Date());
+//		creditOrder.setDisaggreeReason(disaggreeReason);
+//		creditOrderDao.update(creditOrder);
+//		return creditOrder;
+//	}
+
+	/**
+	 * 退款单列表
+	 */
+	@Override
+	public List<MtCreditOrder> getCreditOrderByRefund() {
+		List<MtCreditOrder> creditOrder = creditOrderDao.getCreditOrderByRefund();
+		return creditOrder;
+	}
+
+	/**
+	 * 确认退款
+	 */
+	@Override
+	public MtCreditOrder refundAgree(String createOrderId,String operatorId) {
+       
+		//获取退款用户Id
+		Session session = getCurrentSession();
+		DetachedCriteria inOrderIdCriteria = DetachedCriteria.forClass(MtCreditOrder.class);
+		inOrderIdCriteria.setProjection(Property.forName("orderId"));
+		inOrderIdCriteria.add(Property.forName("id").eq(createOrderId));
+		
+		Criteria userIdCri = session.createCriteria(MtOrderInfo.class);
+		userIdCri.add(Property.forName("id").in(inOrderIdCriteria));
+		userIdCri.setProjection(Projections.groupProperty("userId"));
+	    String userId = userIdCri.uniqueResult().toString();
+	    
+		MtCreditOrder creditOrder = creditOrderDao.get(createOrderId, MtCreditOrder.class);
+		
+		//修改资金流向,获取退款金额
+		MtOrderGoods orderGoods = orderGoodsDao.get(String.valueOf(creditOrder.getOrderGoodsId()), MtOrderGoods.class);
+		double sum = orderGoods.getPrice() * creditOrder.getCount();
+        MtMoneyFlow moneyFlow = new MtMoneyFlow();
+        moneyFlow.setOrderId(Integer.parseInt(creditOrder.getId()));
+        moneyFlow.setOrderGoodsId(creditOrder.getOrderGoodsId());
+        moneyFlow.setCreditOrderId(Integer.parseInt(creditOrder.getId()));
+        moneyFlow.setSource("退货退款单号--"+createOrderId);
+        moneyFlow.setFroms(Constants.MONEY_FLOW+userId);
+        moneyFlow.setAmount(0-sum);
+        moneyFlow.setOperator(Integer.parseInt(operatorId));
+        moneyFlow.setOperateTime(new Date());
+        moneyFlowDao.save(moneyFlow);
+        
+    	//创建平台资金记录
+		MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+		log.setAmount(0-sum);
+		log.setOperator(Integer.parseInt(operatorId));
+		log.setRemark("退货退款");
+		log.setSource("退货退款单号--"+createOrderId);
+		log.setTarget(Constants.MONEY_FLOW+userId);
+		log.setTradeTime(new Date());
+		log.setCreditOrderId(Integer.parseInt(createOrderId));
+		platformCapitalTradeLogDao.save(log);
+	
+		
+		//用户账号创建记录
+       MtUserAccountTradeLog userAccountLog = new MtUserAccountTradeLog();
+       userAccountLog.setAmount(sum);
+       userAccountLog.setUserId(Integer.parseInt(userId));
+       userAccountLog.setSource("退货退款单号"+createOrderId);
+       userAccountLog.setTarget("用户余额");
+       userAccountLog.setTradeTime(new Date());
+       userAccountLog.setOperator(Integer.parseInt(operatorId));
+       userAccountLog.setRemark("退货退款");
+       userAccountTradeLogDao.save(userAccountLog);
+       
+       //修改退货单状态
+       creditOrder.setStatus(Constants.CREDIT_ORDER_STATUS_RETURN_SUCCESS);
+	   creditOrderDao.update(creditOrder);
+
+	    //卖家收货后，删除 ：2天后平台自动退款到用户
+		//从订单日志中获取taskId
+		int category = Constants.ORDER_OPERATE_LOG_SELLER_RECEIVE;
+		String taskId = logDao.getTaskIdByOrderId(String.valueOf(creditOrder.getOrderId()),category);
+		taskParamsDao.removeParamsByTaskId(taskId);
+		taskListDao.removeTaskByTaskId(taskId);
+		
+		//创建订单操作日志
+		createOrderLog(String.valueOf(creditOrder.getOrderId()) , 0 , Constants.ORDER_OPERATE_LOG_RETURN_ALL, "退款成功",null);
+       
+       //推送提示消息
+	   JPushHelper.sendNotificationToUser("open", "【e掌柜】您申请的退款已成功，退款金额已退入您的账户余额！", "alias_"+userId);
+		
+		return creditOrder;
+	}
+
+	/**
+	 * 通过退货单号查询快递单
+	 */
+	@Override
+	public String getCreditOrderLogistics(String createOrderId) {
+		return creditOrderDao.getCreditOrderLogistics(createOrderId);
+	}
+
+	@Override
+	public String getCreditOrderStreamCompany(String creditId) {
+		String streamCompany = creditOrderDao.getCreditOrderStreamCompany(creditId);
+		String streamCompanyNo =  SysDictionaryDatasDao.getStreamCompanyNo(streamCompany);
+		return streamCompanyNo;
+		
+	}
+
+	@Override
+	public Pagination<MtCreditOrder> getCreditOrderListBySellerId(String sellerId, int page, int rows) {
+
+		DetachedCriteria goodsId = DetachedCriteria.forClass(MtGoods.class);
+		goodsId.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		goodsId.setProjection(Property.forName("id"));
+	    
+		DetachedCriteria dc = DetachedCriteria.forClass(MtCreditOrder.class);
+		dc.add(Property.forName("goodsId").in(goodsId));
+		dc.addOrder(Order.asc("createTime"));
+		
+		return creditOrderDao.findByPagination(dc, page, rows, "createTime");
+	}
+
+	/**
+	 * 同意退货
+	 */
+	@Override
+	public MtCreditOrder aggreeReturnOfGoods(String createOrderId) {
+		MtCreditOrder creditOrder = creditOrderDao.get(createOrderId, MtCreditOrder.class);
+		creditOrder.setStatus(Constants.CREDIT_ORDER_STATUS_AGGREE_RETURN);
+		creditOrder.setCreateTime(new Date());
+		creditOrderDao.update(creditOrder);
+		
+		//同意退货后，删除两天后商家未同意退货，自动打款到商家任务
+		//从订单日志中获取taskId
+		int category = Constants.ORDER_OPERATE_LOG_RETURN_GOOD;
+		String taskId = logDao.getTaskIdByOrderId(String.valueOf(creditOrder.getOrderId()),category);
+		taskParamsDao.removeParamsByTaskId(taskId);
+		taskListDao.removeTaskByTaskId(taskId);
+	
+		
+		//卖同意退货后，创建自动定时任务，买家2天未发货，自动打款到商家
+		String chanel = "autoPayToSellerImpl";
+		String serviceName = "mtOrderInfoServiceImpl";
+		String methodName = "payToSellerImpl";
+		String executeTime;
+		try {
+			executeTime = String.valueOf(DateUtil.getXdaysLater(2));
+			ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+			MtTaskParams params1 = new MtTaskParams();
+			params1.setName("订单编号");
+			params1.setParamName("orderId");
+			params1.setDataType("String");
+			params1.setValue(String.valueOf(creditOrder.getOrderId()));
+			list.add(params1);
+			MtTaskParams params2 = new MtTaskParams();
+			params2.setName("操作人编号");
+			params2.setParamName("operatorId");
+			params2.setDataType("String");
+			params2.setValue(null);
+			list.add(params2);
+			MtTaskList taskList = taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+			
+			//创建订单操作日志
+			createOrderLog(String.valueOf(creditOrder.getOrderId()) , 0 , Constants.ORDER_OPERATE_LOG_SELLER_SUCCESS_RETURN_GOOD, "卖家同意退货",taskList.getId());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return creditOrder;
+	}
+
+	/**
+	 * 不同意退货
+	 */
+	@Override
+	public MtCreditOrder disagreeReturnOfGoods(String createOrderId,String disaggreeReason) {
+		MtCreditOrder creditOrder = creditOrderDao.get(createOrderId, MtCreditOrder.class);
+		creditOrder.setStatus(Constants.CREDIT_ORDER_STATUS_DISAGGRESS_RETURN);
+		creditOrder.setCreateTime(new Date());
+		creditOrder.setDisaggreeReason(disaggreeReason);
+		creditOrderDao.update(creditOrder);
+		return creditOrder;
+	}
+
+	/**
+	 * 卖家确认收货收货
+	 */
+	@Override
+	public MtCreditOrder goodsReceipt(String createOrderId) {
+		MtCreditOrder creditOrder = creditOrderDao.get(createOrderId, MtCreditOrder.class);
+		if(creditOrder != null){
+			creditOrder.setStatus(Constants.CREDIT_ORDER_STATUS_RECEIVED);
+			creditOrder.setReceiveTime(new Date());
+			creditOrderDao.update(creditOrder);
+			
+			MtOrderGoods good = orderGoodsDao.get(String.valueOf(creditOrder.getOrderGoodsId()), MtOrderGoods.class);
+			if(good != null){
+				good.setStatus(Constants.ORDER_GOODS_IF_RETURN_GOODS_SUCCESS);
+				orderGoodsDao.update(good);
+			}
+			
+			//获取退款用户Id
+			int userId = orderDao.getUserIdByOrderId(String.valueOf(creditOrder.getOrderId()));
+			
+			//卖家收货后，删除：7天后卖家自动收货任务
+			//从订单日志中获取taskId
+			int category = Constants.ORDER_OPERATE_LOG_USER_DELIVERY;
+			String taskId = logDao.getTaskIdByOrderId(String.valueOf(creditOrder.getOrderId()),category);
+			taskParamsDao.removeParamsByTaskId(taskId);
+			taskListDao.removeTaskByTaskId(taskId);
+			
+		    //卖家收货后，创建自动退款给用户功能，如意2天平台未退款，则自动退款到用户
+			String chanel = "autoRefundAgree";
+			String serviceName = "mtCreditOrderServiceImpl";
+			String methodName = "refundAgree";
+			String executeTime;
+			try {
+				executeTime = String.valueOf(DateUtil.getXdaysLater(2));
+				ArrayList<MtTaskParams> list = new ArrayList<MtTaskParams>();
+				MtTaskParams params1 = new MtTaskParams();
+				params1.setName("退货单编号");
+				params1.setParamName("createOrderId");
+				params1.setDataType("String");
+				params1.setValue(String.valueOf(creditOrder.getOrderId()));
+				list.add(params1);
+				MtTaskParams params2 = new MtTaskParams();
+				params2.setName("操作人编号");
+				params2.setParamName("operatorId");
+				params2.setDataType("String");
+				params2.setValue(null);
+				list.add(params2);
+				MtTaskList taskList = taskListDao.addTask(chanel, executeTime, serviceName, methodName, list);
+				
+				//创建订单操作日志
+				createOrderLog(String.valueOf(creditOrder.getOrderId()) , 0 , Constants.ORDER_OPERATE_LOG_SELLER_RECEIVE, "卖家确认收货",taskList.getId());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return creditOrder;
+	}
+
+	@Override
+	public Map<String, Object> getCreditOrderListByOrderId(String orderId, int pager, int limit) {
+		
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		
+		List<MtCreditOrderAttachements> attachements = new ArrayList<MtCreditOrderAttachements>();
+		
+		DetachedCriteria dc = DetachedCriteria.forClass(MtCreditOrder.class);
+		dc.add(Property.forName("orderId").eq(Integer.parseInt(orderId)));
+		//申请退货
+		dc.add(Restrictions.or(Property.forName("status").eq(Constants.CREDIT_ORDER_STATUS_APPLY_FOR_RETURN), Property.forName("status").eq(Constants.CREDIT_ORDER_STATUS_SHIPPED)));
+		
+		Pagination<MtCreditOrder> pagination = creditOrderDao.findByPagination(dc, pager, limit, Order.desc("createTime"));
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+			for(MtCreditOrder co : pagination.getData()){
+				MtOrderGoods good = orderGoodsDao.get(String.valueOf(co.getOrderGoodsId()), MtOrderGoods.class);
+				if(good != null){
+					double price = 0.0;
+					if (good.getRate() == 0 || good.getRate() == 1) {
+						price = (good.getPrice() + good.getPostage());
+					} else {
+						price = (good.getPrice() * good.getRate() + good.getPostage());
+					}
+
+					// 计算显示抢购
+					if (good.getPanicId() > 0) {
+						MtPanicBuying panic = panicBuyingDao.get(String.valueOf(good.getPanicId()), MtPanicBuying.class);
+						price -= panic.getConcessionalRate();
+					}
+
+					good.setSubtotal(price);
+				}
+				co.setPrice(good.getSubtotal());
+				
+				List<MtCreditOrderAttachements> atts = attachementsDao.getAttachementsIdByCreditId(co.getId());
+				if(atts != null && atts.size() > 0){
+					for(MtCreditOrderAttachements att : atts ){
+						attachements.add(att);
+					}
+				}
+			}
+		}
+		resultMap.put("creditOrders", pagination);
+		resultMap.put("attachements", attachements);
+		return resultMap;
+	}
+	
+	
+	
+}

@@ -1,0 +1,144 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.entity.MtUserAccount;
+import com.xt.ptus.mt.service.MtUserAccountService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserAccount/")
+public class MtUserAccountControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtUserAccountControllerMobile.class);
+	
+	@Resource
+	private MtUserAccountService service;
+	
+	
+	@ResponseBody
+	@RequestMapping("getAccountByUserId")
+	public Result getAccountByUserId(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getAccountByUserId(userId, null));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getDefaultAccountByUserId")
+	public Result getDefaultAccountByUserId(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getDefaultAccountByUserId(userId, null));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getAlipayAccountByUserId")
+	public Result getAlipayAccountByUserId(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getAlipayAccount(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("remove")
+	public Result doRemove(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			service.remove(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("get")
+	public Result doGet(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			result.setData(service.get(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("update")
+	public Result doUpdate(MtUserAccount acc){
+		Result result = new Result();
+
+		try {
+			service.update(acc);
+			result.setData(acc);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("setDefaultAccount")
+	public Result setDefaultAccount(@RequestParam("id") String id, @RequestParam("userId") String userId, @RequestParam("category") String category){
+		Result result = new Result();
+
+		try {
+			service.setDefaultAccount(id, userId, category);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

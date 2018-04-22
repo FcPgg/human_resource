@@ -1,0 +1,31 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtPrizes;
+import com.xt.ptus.mt.service.MtPrizesService;
+
+@Controller
+@RequestMapping(value = "/mt/mtPrizes/")
+public class MtPrizesController extends BaseController<MtPrizes> {
+	
+	@Resource
+	private MtPrizesService service;
+	
+	@RequestMapping("showEditor")
+	private ModelAndView showEditor(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView("mt/prizes/editor");
+		
+		if(request.getParameterMap().containsKey("id")){
+			mav.addObject("entity", service.get(request.getParameter("id")));
+		}
+		
+		return mav;
+	}
+}

@@ -1,0 +1,143 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import java.util.Date;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.google.gson.Gson;
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSellerSettledApply;
+import com.xt.ptus.mt.service.MtSellerSettledApplyService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtSellerSettledApply/")
+public class MtSellerSettledApplyControllerMobile{
+	private static Logger logger = Logger.getLogger(MtSellerControllerMobile.class);
+
+	@Resource
+	private MtSellerSettledApplyService service;
+
+	/**
+	 * 申请入驻
+	 */
+	@RequestMapping("sellerApply")
+	@ResponseBody
+	public Result sellerApply(HttpServletRequest request) {
+		Result result = new Result();
+		try {
+			Gson gson = new Gson();
+			MtSellerSettledApply sellerApply = (MtSellerSettledApply) gson.fromJson(request.getParameter("entity"), MtSellerSettledApply.class);
+			sellerApply.setApplyTime(new Date());
+			service.update(sellerApply);
+			result.setSuccess(true);
+			result.setMessage("商家入驻申请成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("商家入驻申请成功");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSeller")
+	public Result getSeller(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getApplyInfo(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取我的店铺
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getSellerList")
+	public Result getSellerList(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getUserSellerList(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 通过名字查询商家（避免重名）
+	 * 
+	 * @author Administrator jxc
+	 * 
+	 * @param String
+	 *            sellerName
+	 * 
+	 * @version 1.0 initialized this method
+	 * @version 1.1 aaaa ----> bbbb fc
+	 * 
+	 * @return boolean true: 重名 | false: 可以使用
+	 */
+	@ResponseBody
+	@RequestMapping("checkSellerName")
+	public Result checkSellerName(@RequestParam("sellerName") String sellerName) {
+		Result result = new Result();
+		try {
+			result.setData(service.getSellerByName(sellerName));
+			result.setSuccess(true);
+			result.setMessage("成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 用户获取审核结果
+	 */
+	@ResponseBody
+	@RequestMapping("getApplyResultByUserId")
+	public Result getApplyResultByUserId(@RequestParam("userId") String userId) {
+		Result result = new Result();
+		try {
+			result.setData(service.getApplyResultByUserId(userId));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+
+	}
+	
+	
+
+}

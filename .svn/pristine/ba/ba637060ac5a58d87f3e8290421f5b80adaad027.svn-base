@@ -1,0 +1,49 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.util.Calendar;
+import java.util.List;
+
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtUserSignInLog;
+import com.xt.ptus.mt.dao.MtUserSignInLogDao;
+
+@Repository
+public class MtUserSignInLogDaoImpl extends BaseDaoImpl<MtUserSignInLog> implements MtUserSignInLogDao{
+
+	/**
+	 * 获取用户最后一次签到数据
+	 */
+	@Override
+	public MtUserSignInLog getLastSignInLog(String userId) {
+		return (MtUserSignInLog) getCurrentSession().createCriteria(MtUserSignInLog.class).add(Property.forName("userId").eq(Integer.parseInt(userId))).addOrder(Order.desc("signInTime")).setMaxResults(1).uniqueResult();
+	}
+
+	/**
+	 * 获取用户签到记录
+	 */
+	@Override
+	public List<MtUserSignInLog> getUserSignInLog(String userId) {
+		// 获取当前月第一天：
+		Calendar first = Calendar.getInstance();
+		first.add(Calendar.MONTH, 0);
+		first.set(Calendar.DAY_OF_MONTH, 1);// 设置为1号,当前日期既为本月第一天
+
+		// 获取当前月最后一天
+		Calendar last = Calendar.getInstance();
+		last.set(Calendar.DAY_OF_MONTH, last.getActualMaximum(Calendar.DAY_OF_MONTH));
+
+		Criteria criteria = getCurrentSession().createCriteria(MtUserSignInLog.class);
+		
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		criteria.add(Property.forName("signInTime").between(first.getTime(), last.getTime()));
+		
+		return criteria.list();
+	}
+}

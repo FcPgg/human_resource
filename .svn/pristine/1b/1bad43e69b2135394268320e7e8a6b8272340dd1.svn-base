@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSellerSettledApply;
+
+public interface MtSellerSettledApplyDao extends BaseDao<MtSellerSettledApply>{
+
+	List<MtSellerSettledApply> getApplyResultByUserId(String userId);
+
+}

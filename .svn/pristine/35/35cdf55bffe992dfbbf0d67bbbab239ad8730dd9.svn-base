@@ -1,0 +1,122 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAccountTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAmountDao;
+import com.xt.ptus.mt.dao.MtSellerRechargeTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerVoucherCenterDao;
+import com.xt.ptus.mt.entity.MtMoneyFlow;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.entity.MtSellerAmount;
+import com.xt.ptus.mt.entity.MtSellerRechargeTradeLog;
+import com.xt.ptus.mt.entity.MtSellerVoucherCenter;
+import com.xt.ptus.mt.service.MtSellerRechargeTradeLogService;
+
+@Service
+public class MtSellerRechargeTradeLogServiceImpl extends BaseServiceImpl<MtSellerRechargeTradeLog> implements MtSellerRechargeTradeLogService{
+
+	@Autowired
+	private MtSellerRechargeTradeLogDao rechargeTradeLogDao;
+	
+	@Autowired
+	private MtSellerVoucherCenterDao sellerVoucherCenterDao;
+	
+	@Autowired
+	private MtSellerAccountTradeLogDao sllerAccountTradeLogDao;
+	
+	@Autowired 
+	private MtPlatformCapitalTradeLogDao platformCapitalTradeLogDao;
+	
+	@Autowired
+	private MtSellerAmountDao sellerAmountDao;
+	
+	@Override
+	public void foundSellerRecharge(String out_trade_no, String total_amount,
+			String sellerId, String number, String setMealId) {
+
+           MtSellerRechargeTradeLog rechargeTradeLog = new MtSellerRechargeTradeLog();
+           rechargeTradeLog.setRechargeOrderCode(out_trade_no);
+           rechargeTradeLog.setAmount(Double.parseDouble(total_amount));
+           rechargeTradeLog.setSellerId(Integer.parseInt(sellerId));
+           rechargeTradeLog.setNumber(Integer.parseInt(number));
+           rechargeTradeLog.setSetMealId(Integer.parseInt(setMealId));
+           rechargeTradeLog.setRechargeState(Constants.SELLER_RECHARGE_STATE_NO);
+           rechargeTradeLog.setCreationTime(new Date());
+           rechargeTradeLogDao.save(rechargeTradeLog);
+	}
+
+	//通过单号获取支付金额
+	@Override
+	public MtSellerRechargeTradeLog getAmountByOutTradeNo(String outTradeNo) {
+		// TODO Auto-generated method stub
+		MtSellerRechargeTradeLog rechargeTradeLog = rechargeTradeLogDao.getAmountByOutTradeNo(outTradeNo);
+		return rechargeTradeLog;
+	}
+
+	//通过支付宝支付商家e币充值
+	@Override
+	public void rechargeTradeLogByAlipay(String outTradeNo) {
+       //获取E充值订单，充值E币到商家e币交易记录，交易金额流入平台账户
+		MtSellerRechargeTradeLog rechargeTradeLog = rechargeTradeLogDao.getAmountByOutTradeNo(outTradeNo);
+		int sellerId = rechargeTradeLog.getSellerId();
+		double totalAmount = rechargeTradeLog.getAmount();//支付金额
+		int setMealId = rechargeTradeLog.getSetMealId();//购买套餐Id
+		int number = rechargeTradeLog.getNumber();
+		
+		//获取充值得到套餐
+		MtSellerVoucherCenter voucherCenter = sellerVoucherCenterDao.get(String.valueOf(setMealId), MtSellerVoucherCenter.class);
+		//e币充值数量
+		int rechargeNumber = voucherCenter.getECoinNumber() * number;
+		
+		//创建平台资金记录
+		MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+		log.setAmount(totalAmount);
+		log.setOperator(sellerId);
+		log.setRemark("商家购买e币");
+		log.setSource(Constants.TRADE_SOURCE_ALIPAY);
+		log.setTarget("e币充值订单--" + rechargeTradeLog.getId());
+		log.setTradeTime(new Date());
+		log.setSellerBuyIntegrateId(Integer.parseInt(rechargeTradeLog.getId()));
+		platformCapitalTradeLogDao.save(log);
+
+        //创建商家资金记录(e币充值先流入（+）再流出（-）保证收支平衡)
+		MtSellerAmount sellerAmount = new MtSellerAmount();
+		sellerAmount.setSellerId(sellerId);
+		sellerAmount.setAmount(totalAmount);
+		sellerAmount.setSource(Constants.TRADE_SOURCE_ALIPAY);
+		sellerAmount.setTarget("账户余额");
+		sellerAmount.setTradeTime(new Date());
+		sellerAmountDao.save(sellerAmount);
+		
+		MtSellerAmount sellerAmounts = new MtSellerAmount();
+		sellerAmounts.setSellerId(sellerId);
+		sellerAmounts.setAmount(-totalAmount);
+		sellerAmounts.setSource("账户余额");
+		sellerAmounts.setTarget("e币充值");
+		sellerAmounts.setTradeTime(new Date());
+		sellerAmountDao.save(sellerAmounts);
+		
+		//提交充值记录
+		MtSellerAccountTradeLog accountTradeLog = new MtSellerAccountTradeLog();
+		accountTradeLog.setAmount(rechargeNumber);
+		accountTradeLog.setSource(Constants.SELLER_ACCOUNT_RECHARGE_INFLOW);
+		accountTradeLog.setTradeTime(new Date());
+		accountTradeLog.setOperator(sellerId);
+		accountTradeLog.setSellerId(sellerId);
+		sllerAccountTradeLogDao.save(accountTradeLog);
+		
+		//修改充值订单状态
+		rechargeTradeLog.setRechargeState(Constants.SELLER_RECHARGE_STATE_YES);
+		rechargeTradeLogDao.update(rechargeTradeLog);
+		
+	}
+
+}

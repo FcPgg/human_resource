@@ -1,0 +1,90 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtMessageContentsDao;
+import com.xt.ptus.mt.dao.MtMessageConversationsDao;
+import com.xt.ptus.mt.entity.MtMessageContents;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+import com.xt.ptus.mt.service.MtMessageContentsService;
+import com.xt.ptus.obejcts.Pagination;
+
+@Service
+public class MtMessageContentsServiceImpl extends BaseServiceImpl<MtMessageContents> implements MtMessageContentsService{
+
+	@Autowired
+	private MtMessageConversationsDao conversationDao;
+	
+	@Autowired
+	private MtMessageContentsDao contentsDao;
+	
+	/**
+	 * 创建聊天记录
+	 * @param params Map<String, Object>
+	 * 
+	 * 来源:source
+	 * 目标:target
+	 * 消息编号:messageId
+	 * 类型:type
+	 */
+	@Override
+	public MtMessageContents addContents(Map<String, Object> params) {
+		// 1.判断会话是否存在，不存在则创建会话
+		// 2.创建聊天内容
+		String source = params.get("source").toString();
+		String target = params.get("target").toString();
+		MtMessageConversations conversation = conversationDao.getConversations(source, target);
+		
+		if(conversation == null){
+			conversation = new MtMessageConversations();
+			conversation.setCreateTime(new Date());
+			conversation.setSource(Integer.parseInt(source));
+			conversation.setTarget(Integer.parseInt(target));
+			
+			conversationDao.save(conversation);
+		}
+		
+		MtMessageContents content = new MtMessageContents();
+		content.setContent(params.get("content").toString());
+		content.setType(params.get("type").toString());
+		content.setConversationId(Integer.parseInt(conversation.getId()));
+		content.setMessageId(params.get("messageId").toString());
+		content.setCreateTime(new Date());
+		content.setUserId(Integer.parseInt(source));
+		
+		contentsDao.save(content);
+		return content;
+	}
+
+	@Override
+	public Pagination<MtMessageContents> getContentByConversationId(String source, String target, int page, int rows) {
+		
+		List<MtMessageConversations> conversations = conversationDao.getCurrentConversations(source, target);
+		
+		if(conversations != null && conversations.size() > 0){
+			
+			Integer[] array = new Integer[conversations.size()];
+			
+			for(int i = 0; i < conversations.size(); i++){
+				array[i] = Integer.valueOf(conversations.get(i).getId());
+			}
+			
+			DetachedCriteria dc = DetachedCriteria.forClass(MtMessageContents.class);
+			dc.add(Property.forName("conversationId").in(array));
+			
+			return contentsDao.findByPagination(dc, page, rows, Order.desc("createTime"));
+		} else {
+			return new Pagination<MtMessageContents>();
+		}
+	}
+
+}

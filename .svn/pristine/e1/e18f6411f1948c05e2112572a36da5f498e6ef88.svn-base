@@ -1,0 +1,18 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtUserBrowseLogService extends BaseService<MtUserBrowseLog>{
+
+
+	//用户浏览商品足迹
+	public Pagination<MtUserBrowseLog> getUserBrowseGoods(String userId, int page, int rows);
+
+	//用户浏览商家足迹
+	public Pagination<MtUserBrowseLog> getUserBrowseSeller(String userId, int page, int rows);
+
+}

@@ -1,0 +1,76 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtUserSearchLog;
+import com.xt.ptus.mt.service.MtUserSearchLogService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserSearchLog/")
+public class MtUserSearchLogControllerMobile extends BaseController<MtUserSearchLog> {
+	
+	private static Logger logger = Logger.getLogger(MtUserSearchLogControllerMobile.class);
+
+	@Resource
+	private MtUserSearchLogService service;
+	
+	@ResponseBody
+	@RequestMapping("addSearchLog")
+	private Result addSearchLog(MtUserSearchLog log){
+		Result result = new Result();
+
+		try {
+			service.update(log);
+			result.setData(log);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSearchLog")
+	private Result getSearchLog(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getUserSearchLog(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("clearSearchLog")
+	private Result clearSearchLog(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			service.clearSearchLog(userId);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

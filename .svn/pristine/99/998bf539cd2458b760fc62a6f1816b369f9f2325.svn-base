@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtMoneyFlow;
+import com.xt.ptus.mt.service.MtMoneyFlowService;
+
+@Service
+public class MtMoneyFlowServiceImpl extends BaseServiceImpl<MtMoneyFlow> implements MtMoneyFlowService{
+
+}

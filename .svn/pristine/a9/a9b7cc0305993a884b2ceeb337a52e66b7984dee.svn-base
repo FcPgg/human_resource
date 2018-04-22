@@ -1,0 +1,100 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtIntegrateDao;
+import com.xt.ptus.mt.dao.MtPrizesDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.dao.MtWinningLogDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtPrizes;
+import com.xt.ptus.mt.entity.MtWinningLog;
+import com.xt.ptus.mt.service.MtPrizesService;
+
+@Service
+public class MtPrizesServiceImpl extends BaseServiceImpl<MtPrizes> implements MtPrizesService{
+
+	@Autowired
+	private MtUserInfoDao userDao;
+	
+	@Autowired
+	private MtPrizesDao prizesDao;
+	
+	@Autowired
+	private MtWinningLogDao logDao;
+	
+	@Autowired
+	private MtIntegrateDao integrateDao;
+	
+	@Override
+	public String lotteryDraw(String userId, String prizeId) {
+		
+		MtPrizes prize = prizesDao.get(prizeId, MtPrizes.class);
+		
+		MtWinningLog log = new MtWinningLog();
+		log.setUserId(Integer.parseInt(userId));
+		log.setPrizesId(Integer.parseInt(prizeId));
+		log.setWinningTime(new Date());
+		
+        //FC:抽奖时控制用户E币数量，e币不足时不允许抽奖
+		int userAmount = integrateDao.getUserIntegrate(Integer.parseInt(userId));
+		
+		 if(userAmount - 20 >= 0){
+			if(prize.getCount() <= 0){
+				return "奖品数量不足！请联系客服";
+			}else {
+				//扣除积分
+				MtIntegrate integrate1 = new MtIntegrate();
+				integrate1.setUserId(Integer.parseInt(userId));
+				integrate1.setAmount(-20);
+				integrate1.setTarget("e币转盘抽奖");
+				integrate1.setCreateTime(new Date());
+				integrate1.setRemark("e币转盘抽奖");
+				integrateDao.save(integrate1);
+				
+				if(Constants.PRIZES_CATEGORY_INTEGRATE.equals(prize.getPrizesCategory())){
+					log.setIfExchange(Constants.PRIZES_GOODS_IF_EXCHANGE_EXCHANGED);
+					log.setExchangeTime(new Date());
+					log.setPrizesTitle(prize.getTitle());
+					log.setRemark("抽中" + prize.getTitle());
+					logDao.save(log);
+					
+					//抽中积分自动兑换
+					MtIntegrate integrate = new MtIntegrate();
+					integrate.setUserId(Integer.parseInt(userId));
+					integrate.setAmount(prize.getIntegrateCount());
+					integrate.setSource("e币转盘抽奖——" + prize.getTitle());
+					integrate.setCreateTime(new Date());
+					integrate.setRemark("抽奖赠送");
+					integrateDao.save(integrate);
+					
+					//减去奖品数量
+					prize.setCount(prize.getCount() - 1);
+					prizesDao.update(prize);
+					
+					return "恭喜您抽中——" + prize.getTitle() + "——e币已存入您的账户中";
+				} else if(Constants.PRIZES_CATEGORY_GOODS.equals(prize.getPrizesCategory())){
+					log.setIfExchange(Constants.PRIZES_GOODS_IF_EXCHANGE_UNEXCHANGED);
+					log.setPrizesTitle(prize.getTitle());
+					log.setRemark("抽中" + prize.getTitle());
+					logDao.save(log);
+					
+					//减去奖品数量
+					prize.setCount(prize.getCount() - 1);
+					prizesDao.update(prize);
+					return "恭喜您抽中——" + prize.getTitle() + "——请前往我的奖品兑换";
+				} else if(Constants.PRIZES_CATEGORY_LOSE.equals(prize.getPrizesCategory())){
+					return "您没有中奖哦，请再接再厉！";
+				}
+			}
+		 }else{
+		   return "您账户e币余额不足，请充值！" ;
+		 }
+		return null;
+	}
+}

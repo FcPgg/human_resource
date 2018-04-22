@@ -1,0 +1,46 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+import com.xt.ptus.mt.service.MtMessageConversationsService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mtMessageConversations/")
+public class MtMessageConversationsController extends BaseController<MtMessageConversations> {
+	
+	private static Logger logger = Logger.getLogger(MtMessageConversationsController.class);
+	
+	@Resource
+	private MtMessageConversationsService service;
+	
+	/**
+	 * 获取会话列表
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getConversations")
+	private Result getConversations(@RequestParam("userId")String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getConversationsByTarget(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

@@ -1,0 +1,24 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtUserBrowseLogDao extends BaseDao<MtUserBrowseLog>{
+
+	//返回商家点击量
+	int getSellerClickCount(String sellerId);
+
+	//返回商家点击量
+	int getGoodsClickCount(String id);
+
+	Pagination<MtUserBrowseLog> getUserBrowseGoods(String userId, int page, int rows);
+
+	Pagination<MtUserBrowseLog> getUserBrowseSeller(String userId, int page, int rows);
+
+	MtUserBrowseLog getBrowseLogByGoodsIdAndUserId(String id, String userId);
+
+	MtUserBrowseLog getBrowseLogSeller(String id, String userId);
+
+
+}

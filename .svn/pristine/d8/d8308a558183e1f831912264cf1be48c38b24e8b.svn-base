@@ -1,0 +1,18 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+
+public interface MtMessageConversationsDao extends BaseDao<MtMessageConversations>{
+
+	MtMessageConversations getConversations(String source, String target);
+
+	List<MtMessageConversations> getConversationsByTarget(String userId);
+
+	List<MtMessageConversations> getCurrentConversations(String source, String target);
+
+	List<MtMessageConversations> getConversationsBySource(String userId);
+
+}

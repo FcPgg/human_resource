@@ -1,0 +1,10 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtShopCar;
+
+public interface MtShopCarDao extends BaseDao<MtShopCar>{
+
+	MtShopCar getShopCarByParams(int userId, int sellerId, int goodsId);
+
+}

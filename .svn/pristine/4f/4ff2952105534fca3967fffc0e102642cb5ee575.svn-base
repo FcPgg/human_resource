@@ -1,0 +1,20 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtShopCar;
+import com.xt.ptus.mt.dao.MtShopCarDao;
+
+@Repository
+public class MtShopCarDaoImpl extends BaseDaoImpl<MtShopCar> implements MtShopCarDao{
+
+	@Override
+	public MtShopCar getShopCarByParams(int userId, int sellerId, int goodsId) {
+		return (MtShopCar) getCurrentSession().createCriteria(MtShopCar.class)
+				.add(Property.forName("userId").eq(userId))
+				.add(Property.forName("sellerId").eq(sellerId))
+				.add(Property.forName("goodsId").eq(goodsId)).uniqueResult();
+	}
+}

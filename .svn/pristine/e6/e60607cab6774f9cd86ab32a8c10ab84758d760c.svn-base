@@ -1,0 +1,199 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtGoodsDao;
+import com.xt.ptus.mt.dao.MtSellerDao;
+import com.xt.ptus.mt.dao.MtShopCarDao;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtGoodsSpec;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtShopCar;
+import com.xt.ptus.mt.pojo.MtGoodsPojo;
+import com.xt.ptus.mt.service.MtShopCarService;
+
+@Service
+public class MtShopCarServiceImpl extends BaseServiceImpl<MtShopCar> implements MtShopCarService{
+
+	@Autowired
+	private MtSellerDao sellerDao;
+	
+	@Autowired
+	private MtGoodsDao goodsDao;
+	
+	@Autowired
+	private MtShopCarDao shopCarDao;
+	
+	/**
+	 * 插入数据库之前
+	 */
+	@Override
+	public void beforeInsert(MtShopCar t) {
+		t.setCreateTime(new Date());
+	}
+	
+	@Override
+	public List<MtSeller> getShopCarByUserId(String userId) {
+		List<MtSeller> result = new ArrayList<MtSeller>();
+		
+		Session session = getCurrentSession();
+		
+		//获取商家
+		Criteria criteria = session.createCriteria(MtSeller.class);
+
+		DetachedCriteria inCriteria = DetachedCriteria.forClass(MtShopCar.class);  
+		inCriteria.setProjection(Property.forName("sellerId"));
+		inCriteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		criteria.add(Property.forName("id").in(inCriteria));
+		
+		List<MtSeller> sellers = criteria.list();
+		
+		if(sellers != null && sellers.size() > 0){
+			for(MtSeller seller : sellers){
+				//获取商品
+				// 1. 商品在购物车中出现
+				// 2. 是此商家的商品 
+				Criteria criteriaGoods = session.createCriteria(MtGoods.class);
+				
+				DetachedCriteria goodInCriteria = DetachedCriteria.forClass(MtShopCar.class);  
+				goodInCriteria.setProjection(Property.forName("goodsId"));
+				goodInCriteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+				criteriaGoods.add(Property.forName("id").in(goodInCriteria));
+
+				criteriaGoods.add(Property.forName("sellerId").eq(Integer.parseInt(seller.getId())));
+				
+				try {
+					List<MtGoods> goods = criteriaGoods.list();
+					
+					if(goods != null && goods.size() > 0) {
+						//获取规格表中数据
+					}
+					seller.setGoods(goods);
+				} catch (Exception e) {
+					System.out.println(e);
+				}
+				result.add(seller);
+			}
+		}
+		
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> getShopCarDataByUserId(String userId) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		
+		Session session = getCurrentSession();
+		
+		Criteria cri = session.createCriteria(MtShopCar.class);
+		cri.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		List<MtShopCar> shopCarList = cri.list();
+		
+		if(shopCarList != null && shopCarList.size() > 0){
+		
+			DetachedCriteria inSellerIdCriteria = DetachedCriteria.forClass(MtShopCar.class);  
+			inSellerIdCriteria.setProjection(Property.forName("sellerId"));
+			inSellerIdCriteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+			
+			//获取商家
+			Criteria sellersCri = session.createCriteria(MtSeller.class);
+			sellersCri.add(Property.forName("id").in(inSellerIdCriteria));
+			result.put("sellers", sellersCri.list());
+			
+			DetachedCriteria inGoodsIdCriteria = DetachedCriteria.forClass(MtShopCar.class);  
+			inGoodsIdCriteria.setProjection(Property.forName("goodsId"));
+			inGoodsIdCriteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+			
+			//获取商品
+			Criteria goodsCri = session.createCriteria(MtGoods.class);
+			goodsCri.add(Property.forName("id").in(inGoodsIdCriteria));
+			
+			DetachedCriteria inSpecCriteria = DetachedCriteria.forClass(MtShopCar.class);  
+			inSpecCriteria.setProjection(Property.forName("goodsSpecId"));
+			inSpecCriteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+			
+			//获取规格
+			Criteria specCri = session.createCriteria(MtGoodsSpec.class);
+			specCri.add(Property.forName("id").in(inSpecCriteria));
+			
+			List<MtGoodsSpec> specs = specCri.list();
+			
+			List<MtGoods> goodsList = goodsCri.list();
+			
+			List<MtGoodsPojo> pojoList = new ArrayList<MtGoodsPojo>();
+			
+			
+			for(MtShopCar car : shopCarList){
+				if(goodsList != null && goodsList.size() > 0){
+					for(MtGoods good : goodsList){
+						if(car.getGoodsId() == Integer.parseInt(good.getId())){
+							MtGoodsPojo pojo = new MtGoodsPojo();
+							
+							//设置购物车编号
+							pojo.setId(car.getId());
+
+							//商家编号
+							pojo.setSellerId(good.getSellerId());
+							
+							//设置商品编号
+							pojo.setGoodsId(Integer.parseInt(good.getId()));
+							
+							pojo.setStatus(good.getStatus());
+							
+							pojo.setGoodsName(good.getName());
+
+							pojo.setIndexImgUrl(good.getIndexResourceAccessUrl());
+			
+							for(MtGoodsSpec spec : specs){
+								if(car.getGoodsSpecId() == Integer.parseInt(spec.getId()) && spec.getGoodsId() == Integer.parseInt(good.getId())){
+									pojo.setSpecId(Integer.parseInt(spec.getId()));
+									pojo.setSpecName(spec.getDescription());
+									pojo.setOldPrice(spec.getPrice());
+									if(good.getRate() > 0.0){
+										pojo.setRealPrice(spec.getPrice() * good.getRate());
+									} else {
+										pojo.setRealPrice(spec.getPrice());
+									}
+								}
+							}
+
+							//TODO: 设置邮费
+							pojo.setPostage(good.getPostage());
+							
+							pojo.setCount(car.getGoodsNumber());
+							pojo.setChoose(0);
+							
+							pojoList.add(pojo);
+						}
+					}
+				}
+			}
+			
+			
+			
+			result.put("goods", pojoList);
+		} else {
+			result.put("sellers", null);
+			result.put("goods", null);
+		}
+		return result;
+	}
+
+	@Override
+	public MtShopCar getShopCarByParams(int userId, int sellerId, int goodsId) {
+		return shopCarDao.getShopCarByParams(userId, sellerId, goodsId);
+	}
+}

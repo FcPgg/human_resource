@@ -1,0 +1,29 @@
+package com.xt.ptus.mt.service;
+
+import java.util.Map;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtMessageContents;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtMessageContentsService extends BaseService<MtMessageContents>{
+
+	/**
+	 * 创建聊天记录
+	 * @param params Map<String, Object>
+	 * 
+	 * 来源:source
+	 * 目标:target
+	 * 消息编号:messageId
+	 * 类型:type
+	 */
+	MtMessageContents addContents(Map<String, Object> params);
+
+	/**
+	 * 获取聊天记录
+	 * @param conversationId
+	 * @return
+	 */
+	Pagination<MtMessageContents> getContentByConversationId(String source, String target, int page, int rows);
+
+}

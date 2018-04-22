@@ -1,0 +1,29 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtOrderGoods;
+
+public interface MtOrderGoodsDao extends BaseDao<MtOrderGoods>{
+
+	List<MtOrderGoods> getOrderGoodsByOrderId(int orderId);
+
+	List<MtOrderGoods> getGoodsByOrderId(String id, int status);
+
+    MtOrderGoods getGoodsByOrderGoodsId(int orderGoodsId);
+
+	/**
+	 * 获取商品总销量
+	 * @param goodsId
+	 * @return
+	 */
+	int getGoodsSaleCount(String goodsId);
+
+	/**
+	 * 商品月销量
+	 * @param goodsId
+	 * @return
+	 */
+	int getGoodsMonthSaleCount(String goodsId);
+}

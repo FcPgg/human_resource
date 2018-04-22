@@ -1,0 +1,528 @@
+package com.xt.ptus.constants;
+
+
+/**
+ * 常量定义
+ * @author john
+ *
+ */
+public class Constants {
+	
+	/**
+	 * 动词-更新
+	 */
+	public static final String VERB_UPDATE = "update";
+	
+	/**
+	 * 动词-删除
+	 */
+	public static final String VERB_REMOVE = "remove";
+	
+	/**
+	 * 动词-查询单个
+	 */
+	public static final String VERB_GET = "get";
+	
+	/**
+	 * 动词-查询所有
+	 */
+	public static final String VERB_LIST = "list";
+
+	/**
+	 * 动词-转到主页
+	 */
+	public static final String VERB_PAGE = "page";
+	
+	/**
+	 * 动词-分页
+	 */
+	public static final String VERB_PAGINATION = "pagination";
+	
+	
+	/**
+	 * 用户状态-未登录
+	 */
+	public static final int USER_STATUS_UNLOGIN = 0;
+	
+	
+	/**
+	 * 用户状态-已登录
+	 */
+	public static final int USER_STATUS_LOGINED = 1;
+	
+	/**
+	 * 用户状态-已冻结
+	 */
+	public static final int USER_STATUS_FORZENED = 9;
+	
+	
+	/**
+	 * 用户分类-系统用户
+	 */
+	public static final int USER_INFO_CATEGORY_SYSTEM_USER = 0;
+	
+	/**
+	 * 用户分类-APP用户
+	 */
+	public static final int USER_INFO_CATEGORY_APP_USER = 1;
+	
+	/**
+	 * 用户分类-商家用户
+	 */
+	public static final int USER_INFO_CATEGORY_SELLER_USER = 2;
+	
+	/**
+	 * 用户分类-代理商用户
+	 */
+	public static final int USER_INFO_CATEGORY_PROXY_USER = 3;
+	
+	
+	/**
+	 * 商品状态-正常
+	 */
+	public static final int GOODS_STATUS_NORMAL = 0;
+	
+	/**
+	 * 商品状态-下架
+	 */
+	public static final int GOODS_STATUS_UNDER_CARRIAGE = 9;
+
+	/**
+	 * 收货地址-默认
+	 */
+	public static final String USER_SHIPPING_ADDRESS_DEFAULT = "0";
+	
+	/**
+	 * 收货地址-非默认
+	 */
+	public static final String USER_SHIPPING_ADDRESS_UNDEFAULT = "1";
+	
+	/**
+	 * 用户账户-默认
+	 */
+	public static final String USER_ACCOUNT_DEFAULT = "0";
+	
+	/**
+	 * 用户账户-非默认
+	 */
+	public static final String USER_ACCOUNT_UNDEFAULT = "1";
+	
+	/**
+	 * 用户账户分类-支付宝
+	 */
+	public static final String USER_ACCOUNT_CATEGORY_ALIPAY = "alipay";
+	
+	/**
+	 * 用户账户分类-微信
+	 */
+	public static final String USER_ACCOUNT_CATEGORY_WECHAT = "wechat";
+	
+	/**
+	 * 用户关注分类-商家
+	 */
+	public static final int USER_ATTENTION_CATEGORY_SELLER = 0;
+	
+	/**
+	 * 用户关注分类-商品
+	 */
+	public static final int USER_ATTENTION_CATEGORY_GOODS = 1;
+
+	/**
+	 * 订单操作日志-创建订单
+	 */
+	public static final int ORDER_OPERATE_LOG_CREATE = 0;
+
+	/**
+	 * 订单操作日志-修改订单
+	 */
+	public static final int ORDER_OPERATE_LOG_UPDATE = 1;
+	
+	/**
+	 * 订单操作日志-支付
+	 */
+	public static final int ORDER_OPERATE_LOG_PAY = 2;
+	
+	/**
+	 * 订单操作日志-发货
+	 */
+	public static final int ORDER_OPERATE_LOG_DELIVERY = 3;
+	
+	/**
+	 * 订单操作日志-收货
+	 */
+	public static final int ORDER_OPERATE_LOG_RECEIVE = 4;
+	
+	/**
+	 * 订单操作日志-关闭
+	 */
+	public static final int ORDER_OPERATE_LOG_CLOSE = 5;
+
+	/**
+	 * 订单操作日志-退货
+	 */
+	public static final int ORDER_OPERATE_LOG_RETURN_GOOD = 6;
+	
+	/**
+	 * 订单操作日志-退款
+	 */
+	public static final int ORDER_OPERATE_LOG_REFUND = 7;
+	
+	/**
+	 * 订单操作日志-退款
+	 */
+	public static final int ORDER_OPERATE_LOG_RETURNING = 8;
+	
+	/**
+	 * 订单操作日志-退货退款
+	 */
+	public static final int ORDER_OPERATE_LOG_RETURN_ALL = 9;
+	
+	/**
+	 * 订单操作日志-取消
+	 */
+	public static final int ORDER_OPERATE_LOG_CANCEL = 10;
+	
+	
+	/**
+	 * 订单操作日志— 卖家同意退货
+	 */
+	public static final int ORDER_OPERATE_LOG_SELLER_SUCCESS_RETURN_GOOD= 11;
+	
+	/**
+	 * 订单操作日志— 买家发货
+	 */
+	public static final int ORDER_OPERATE_LOG_USER_DELIVERY= 12;
+	
+	/**
+	 * 订单操作日志 — 卖家确认收货
+	 */
+	public static final int ORDER_OPERATE_LOG_SELLER_RECEIVE= 13;
+	
+	
+	/**
+	 * 订单支付状态-未支付
+	 */
+	public static final int ORDER_PAY_STATUS_UNPAID = 0;
+	
+	/**
+	 * 订单支付状态-已支付
+	 */
+	public static final int ORDER_PAY_STATUS_PAID = 1;
+
+	/**
+	 * 订单发货状态-待发货
+	 */
+	public static final int ORDER_STREAM_STATUS_READY_SHIPPED = 0;
+	
+	/**
+	 * 订单发货状态-已发货
+	 */
+	public static final int ORDER_STREAM_STATUS_SHIPPED = 1;
+	
+	/**
+	 * 订单发货状态-已收货
+	 */
+	public static final int ORDER_STREAM_STATUS_RECEIVED = 2;
+	
+	/**
+	 * 订单状态-正常
+	 */
+	public static final int ORDER_STATUS_NORMAL = 0;
+	
+	/**
+	 * 订单状态-交易成功
+	 */
+	public static final int ORDER_STATUS_SUCCESS = 5;
+	
+	/**
+	 * 订单状态-取消订单
+	 */
+	public static final int ORDER_STATUS_CANCEL = 6;
+	
+	/**
+	 * 订单状态-删除
+	 */
+	public static final int ORDER_STATUS_REMOVE = 9;
+	
+	/**
+	 * 订单状态-关闭
+	 */
+	public static final int ORDER_STATUS_CLOSED = 8;
+
+	/**
+	 * 退货单-正常
+	 */
+	public static final int CREDIT_ORDER_STATUS_NORMAL = 0;
+	
+	/**
+	 * 退货单-申请退货
+	 */
+	public static final int CREDIT_ORDER_STATUS_APPLY_FOR_RETURN = 1;
+	
+	/**
+	 * 退货单-同意退货
+	 */
+	public static final int CREDIT_ORDER_STATUS_AGGREE_RETURN = 2;
+	
+	/**
+	 * 退货单-不同意退货
+	 */
+	public static final int CREDIT_ORDER_STATUS_DISAGGRESS_RETURN = 3;
+	
+	/**
+	 * 退货单-买家已发货
+	 */
+	public static final int CREDIT_ORDER_STATUS_SHIPPED = 4;
+	
+	/**
+	 * 退货单-商家已收货
+	 */
+	public static final int CREDIT_ORDER_STATUS_RECEIVED = 5;
+	
+	/**
+	 * 退货单-退货成功
+	 */
+	public static final int CREDIT_ORDER_STATUS_RETURN_SUCCESS = 6;
+
+	/**
+	 * 订单商品状态-未发生退货
+	 */
+	public static final int ORDER_GOODS_STATUS_IF_RETURN_GOODS_NO = 0;
+	
+	/**
+	 * 订单商品状态-发生退货
+	 */
+	public static final int ORDER_GOODS_STATUS_IF_RETURN_GOODS_YES = 1;
+	
+	/**
+	 * 订单商品状态-退货成功
+	 */
+	public static final int ORDER_GOODS_IF_RETURN_GOODS_SUCCESS = 2;
+
+	/**
+	 * 订单退货状态-未退货
+	 */
+	public static final int ORDER_IF_UNRETURN_GOODS = 0;
+	
+	/**
+	 * 订单退货状态-发生退货
+	 */
+	public static final int ORDER_IF_RETURN_GOODS = 0;
+	
+	/**
+	 * 资金流向--去向退款
+	 */
+	public static final String MONEY_FLOW = "退款到用户";
+	
+	/**
+	 * 积分商城--删除商品
+	 */
+	public static final String INTEGRATE_GOODS_ROMOVE_YES = "1";
+	/**
+	 * 积分商城--不删除商品
+	 */
+	public static final String INTEGRATE_GOODS_ROMOVE_NO = "0";
+	
+	/**
+	 * 商家资金表流向 -- 注册（入驻）流入
+	 *  register-inflow
+	 */
+	public static final String SELLER_ACCOUNT_REGISTER_INFLOW = "入驻流入";
+	
+    /**
+     * 商家入驻资金额度
+     */
+	public static final double SELLER_ACCOUNT_REGISTER_AMOUNT = 1800.00;
+	
+	
+	/**
+	 * 商家资金表流向 -- 充值流入
+	 */
+	public static final String SELLER_ACCOUNT_RECHARGE_INFLOW = "充值流入";
+	
+	/**
+	 * 商家资金流向 -- 购买服务流出
+	 */
+	public static final String SELLER_ACCOUNT_PURCHASE_SERVICE_OUTFLOW = "购买服务流出";
+	
+	/**
+	 * 同城配送速度1公里5分钟
+	 */
+	public static final double velocity = 5.00;
+	
+	/**
+	 * 商家审核待付款(已通过)状态
+	 */
+	public static final int SELLER_APPLY_STATUS_YES = 1;
+	
+	/**
+	 * 商家审核未通过状态
+	 */
+	public static final int SELLER_APPLY_STATUS_NO = 3;
+	
+	/**
+	 * 商家审核已认证
+	 */
+	public static final int SELLER_APPLY_STATUS_AUTHENTICAED = 6;
+	
+	/**
+	 * 商家已认证
+	 */
+	public static final String REVIEWED_STATUS = "已认证";
+	
+	/**
+	 * e币兑换记录 -- 申请兑换
+	 */
+	public static final int INTEGRATE_GOODS_STATUS_NEED_EXCHANGE = 0;
+	
+	/**
+	 * e币兑换记录 -- 已经发货
+	 */
+	public static final int INTEGRATE_GOODS_STATUS_DELIVERY = 1;
+	
+	/**
+	 * e币兑换记录 -- 已经收货
+	 */
+	public static final int INTEGRATE_GOODS_STATUS_RECEIVED = 2;
+
+	/**
+	 * 转盘奖品分类 -- e币
+	 */
+	public static final String PRIZES_CATEGORY_INTEGRATE = "0";
+	
+	/**
+	 * 转盘奖品分类 -- 可兑换的商品
+	 */
+	public static final String PRIZES_CATEGORY_GOODS = "1";
+	
+	/**
+	 * 转盘奖品分类 -- 可兑换的商品
+	 */
+	public static final String PRIZES_CATEGORY_LOSE = "2";
+
+	
+	/**
+	 * 商家初始密码
+	 * 
+	 */
+	public static final String SELLER_INITIAL_PASSWORD = "e10adc3949ba59abbe56e057f20f883e";
+	
+
+	/**
+	 * 转盘奖品兑换状态--未兑换
+	 */
+	public static final String PRIZES_GOODS_IF_EXCHANGE_UNEXCHANGED = "0";
+
+	
+	/**
+	 * 转盘奖品兑换状态--已兑换
+	 */
+	public static final String PRIZES_GOODS_IF_EXCHANGE_EXCHANGED = "1";
+	
+	/**
+	 * 广告类型 -- 首页轮播
+	 */
+	public static final int INDEX_ADVERTISEMENT_BANNER = 1;
+	
+	/**
+	 * 广告类型 -- 首页头条
+	 */
+	public static final int INDEX_ADVERTISEMENT_TOPLINE = 2;
+	
+	/**
+	 * 积分商城商品是否删除 -- 删除
+	 */
+	public static final String INTEGRATE_GOODS_REMOVED = "1";
+	
+	/**
+	 * 积分商城商品是否删除 -- 未删除
+	 */
+	public static final String INTEGRATE_GOODS_UNREMOVE = "0";
+
+	/**
+	 * 资金交易来源 -- 支付宝账户
+	 */
+	public static final String TRADE_SOURCE_ALIPAY = "支付宝账户";
+	
+	/**
+	 * 资金交易来源 -- 微信账户
+	 */
+	public static final String TRADE_SOURCE_WECHAT = "微信账户";
+	
+	/**
+	 * 资金交易来源 -- 用户账户
+	 */
+	public static final String TRADE_SOURCE_USER_ACCOUNT = "用户账户";
+	
+	/**
+	 * 资金交易来源 -- 支付宝账户
+	 */
+	public static final String TRADE_SOURCE_PLATFORM = "platform";
+	
+	/**
+	 * 资金流向分类--用户支付订单
+	 */
+	public static final int MONEY_FLOW_USER_PAY_ORDER = 0;
+	
+	/**
+	 * 资金流向分类--退回给用户
+	 */
+	public static final int MONEY_FLOW_RETURN_TO_USER = 1;
+	
+	/**
+	 * 资金流向分类--支付到商家
+	 */
+	public static final int MONEY_FLOW_PAY_TO_SELLER = 2;
+
+	/**
+	 * 用户资金账户交易分类--用户支付订单
+	 */
+	public static final int USER_TRADE_LOG_CATEGORY_PAY_ORDER = 0;
+	
+	/**
+	 * 用户资金账户交易分类--用户提现
+	 */
+	public static final int USER_TRADE_LOG_CATEGORY_WITHDRAW_CASH = 1;
+	
+	/**
+	 * 用户资金账户交易分类--退款流入
+	 */
+	public static final int USER_TRADE_LOG_CATEGORY_RETURN_ORDER = 2;
+	
+	/**
+	 * 用户资金账户交易分类--用户充值余额
+	 */
+	public static final int USER_TRADE_LOG_CATEGORY_RECHARGE_ACCOUNT = 3;
+	
+	/**
+	 * 商家充值e币订单状态--未付款
+	 */
+	public static final int SELLER_RECHARGE_STATE_NO = 0;
+
+	/**
+	 *  商家充值e币订单状态--付款成功
+	 */
+	public static final int SELLER_RECHARGE_STATE_YES = 1;
+
+	/**
+	 *	订单支付方式--支付宝支付
+	 */
+	public static final String ORDER_PAY_METHODS_ALIPAY = "alipay";
+	
+	/**
+	 *	订单支付方式--余额支付
+	 */
+	public static final String ORDER_PAY_METHODS_AMOUNT = "amount";
+	
+	/**
+	 *	订单支付方式--微信支付
+	 */
+	public static final String ORDER_PAY_METHODS_WXPAY = "wxpay";
+	
+	/**
+	 * 平台资金分类 --平台可以提现的资金（商入驻费用、商家购买e币费用）
+	 */
+	public static final int PLATFORM_CAPITAL_WITHDRAWALS_YES = 1;
+
+}
+

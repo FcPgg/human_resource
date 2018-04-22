@@ -1,0 +1,13 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtApplyAttachment;
+
+public interface MtApplyAttachmentDao extends BaseDao<MtApplyAttachment>{
+
+
+	List<MtApplyAttachment> getApplyAttachments(String id);
+
+}

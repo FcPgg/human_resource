@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.dao;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserAttention;
+
+public interface MtUserAttentionDao extends BaseDao<MtUserAttention>{
+
+	MtUserAttention getUserAttention(String userId, String attentionId, String category);
+
+	int getSellerAttentionNumber(String id);
+
+}

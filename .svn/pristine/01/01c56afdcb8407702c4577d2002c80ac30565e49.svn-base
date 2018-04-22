@@ -1,0 +1,15 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtIntegrateService extends BaseService<MtIntegrate>{
+
+	int getUserIntegrate(String userId);
+
+	Pagination<MtIntegrate> getHistory(String userId, int page, int rows);
+
+	boolean buyIntegrateByAlipay(String id, int amount);
+
+}

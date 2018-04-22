@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtSellerVoucherCenter;
+import com.xt.ptus.mt.dao.MtSellerVoucherCenterDao;
+
+@Repository
+public class MtSellerVoucherCenterDaoImpl extends BaseDaoImpl<MtSellerVoucherCenter> implements MtSellerVoucherCenterDao{
+
+}

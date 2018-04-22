@@ -1,0 +1,17 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserPublishInfo;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtUserPublishInfoService extends BaseService<MtUserPublishInfo>{
+
+	Pagination<MtUserPublishInfo> getRecommendsInfo(int page, int rows);
+	
+	Pagination<MtUserPublishInfo> getInfoByCategoryId(int page, int rows, String categoryId);
+
+	MtUserPublishInfo getInfoDetail(String id, String userId);
+
+	Pagination<MtUserPublishInfo> getInfoByUserId(int pager, int rows, String userId);
+
+}

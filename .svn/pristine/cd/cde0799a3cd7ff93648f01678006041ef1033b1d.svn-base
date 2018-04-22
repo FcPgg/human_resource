@@ -1,0 +1,19 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserAddress;
+
+public interface MtUserAddressDao extends BaseDao<MtUserAddress>{
+
+	List<MtUserAddress> getAddressByUserId(String userId);
+
+	/**
+	 * 将该用户的所有收货地址设置为非默认
+	 * @param userId
+	 */
+	void resetAddressByUserId(int userId);
+
+	MtUserAddress getDefaultAddressByUserId(String userId);
+}

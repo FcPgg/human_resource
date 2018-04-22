@@ -1,0 +1,10 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtRecommendsData;
+
+public interface MtRecommendsDataService extends BaseService<MtRecommendsData>{
+
+	//商家商品置顶
+	public void topGoods(String id, String sellerId);
+}

@@ -1,0 +1,96 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.qiniu.http.Response;
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.helper.QiNiuHelper;
+import com.xt.ptus.mt.dao.MtMaterialCatalogDao;
+import com.xt.ptus.mt.dao.MtMaterialResourcesDao;
+import com.xt.ptus.mt.entity.MtMaterialCatalog;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.mt.service.MtMaterialResourcesService;
+import com.xt.ptus.obejcts.Pagination;
+
+@Service
+public class MtMaterialResourcesServiceImpl extends BaseServiceImpl<MtMaterialResources> implements MtMaterialResourcesService{
+	
+	private static Logger logger = Logger.getLogger(MtMaterialResourcesServiceImpl.class);
+	
+	@Autowired
+	private MtMaterialResourcesDao dao;
+	
+	@Autowired
+	private MtMaterialCatalogDao catalogDao;
+
+	@Override
+	public List<MtMaterialResources> getResourceByCatalogId(String catalogId) {
+		return dao.getResourceByCatalogId(catalogId);
+	}
+
+	@Override
+	public Pagination<MtMaterialResources> getResourceBySellerId(String sellerId, int page, int rows) {
+		return dao.getResourceBySellerId(sellerId, page, rows);
+	}
+
+	@Override
+	public void doRemoveResourcesByIdArray(String[] array) {
+		dao.doRemoveResourcesByIdArray(array);
+	}
+
+	@Override
+	public void doAddResources(List<MtMaterialResources> list, String sellerId) throws Exception {
+		if(list != null && list.size() > 0){
+			String accessKey = null;
+			String secretKey = null;
+			String bucketName = null;
+			String serverUrl = null;
+			String localFileCatalog = null;
+			InputStream in = this.getClass().getResourceAsStream("/system.properties");
+			Properties prop = new Properties();
+			try {
+				
+				prop.load(in);
+
+				accessKey = prop.getProperty("qiniu.access_key");
+				secretKey = prop.getProperty("qiniu.secret_key");
+				bucketName = prop.getProperty("qiniu.bucketname");
+				serverUrl = prop.getProperty("qiniu.server.url");
+				localFileCatalog = prop.getProperty("file.upload");
+				in.close();
+			} catch (IOException e) {
+				logger.error(e);
+			}
+			
+			QiNiuHelper helper = new QiNiuHelper(accessKey, secretKey, bucketName);
+			MtMaterialCatalog catalog = catalogDao.findRootCatalog(sellerId); 
+			if(catalog != null){
+				for(MtMaterialResources mr : list){
+					mr.setCatalogId(Integer.parseInt(catalog.getId()));
+					mr.setAccessUrl(serverUrl + mr.getNewFileName() + "." + mr.getNewFileType());
+					mr.setUploadTime(new Date());
+					
+					File file = new File(localFileCatalog + File.separator + mr.getNewFileName() + "." + mr.getNewFileType());
+
+					InputStream input = new FileInputStream(file);
+					Response res = helper.uploadFile(input, mr.getNewFileName() + "." + mr.getNewFileType());
+					if(res.statusCode == 200){
+						dao.save(mr);
+					} else {
+						throw new Exception("上传文件失败!");
+					}
+				}
+			}
+		}
+	}
+}

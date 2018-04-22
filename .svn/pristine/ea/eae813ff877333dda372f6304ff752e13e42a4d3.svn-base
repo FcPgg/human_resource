@@ -1,0 +1,17 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+
+public interface MtSellerAccountTradeLogService extends BaseService<MtSellerAccountTradeLog>{
+
+	double getAcountSurplusMoeny(String sellerId);
+
+	public MtSellerAccountTradeLog ECoinRecharge(String sellerId, String voucherCenterId, String number);
+
+	public boolean sellerIntegrateToUserAccount(String sellerId, String accountNumbers,int integralNumber);
+
+
+}

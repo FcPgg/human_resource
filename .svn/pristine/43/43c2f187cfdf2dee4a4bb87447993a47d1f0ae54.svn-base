@@ -1,0 +1,24 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.dao.MtUserAccountTradeLogDao;
+
+@Repository
+public class MtUserAccountTradeLogDaoImpl extends BaseDaoImpl<MtUserAccountTradeLog> implements MtUserAccountTradeLogDao{
+
+	@Override
+	public double getUserBalance(String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserAccountTradeLog.class);
+		
+		criteria.setProjection(Projections.sum("amount"));
+		
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		return criteria.uniqueResult() != null ? Double.valueOf(criteria.uniqueResult().toString()) : 0.0;
+	}
+}

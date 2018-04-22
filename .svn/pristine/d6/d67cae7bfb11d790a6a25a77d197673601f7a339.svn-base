@@ -1,0 +1,39 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtUserPublishPropsTemplateDao;
+import com.xt.ptus.mt.entity.MtUserPublishPropsTemplate;
+import com.xt.ptus.mt.service.MtUserPublishPropsTemplateService;
+import com.xt.ptus.sys.dao.SysDictionaryDatasDao;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtUserPublishPropsTemplateServiceImpl extends BaseServiceImpl<MtUserPublishPropsTemplate> implements MtUserPublishPropsTemplateService{
+
+	@Autowired
+	private MtUserPublishPropsTemplateDao dao;
+	
+	@Autowired
+	private SysDictionaryDatasDao dictDao;
+	
+	@Override
+	public List<MtUserPublishPropsTemplate> getPropsByInfoId(String infoId) {
+		
+		List<MtUserPublishPropsTemplate> list = dao.getPropsByInfoId(infoId);
+		
+		if(list != null && list.size() > 0){
+			for(MtUserPublishPropsTemplate temp : list){
+				if(!StringUtil.IsNullOrEmpty(temp.getDictionary())){
+					temp.setDict(dictDao.getDictionaryByCode(temp.getDictionary(), null));
+				}
+			}
+		}
+		return dao.getPropsByInfoId(infoId);
+	}
+
+}

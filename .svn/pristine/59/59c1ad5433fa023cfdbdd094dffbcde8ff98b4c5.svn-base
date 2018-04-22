@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtUserReadLog;
+import com.xt.ptus.mt.dao.MtUserReadLogDao;
+
+@Repository
+public class MtUserReadLogDaoImpl extends BaseDaoImpl<MtUserReadLog> implements MtUserReadLogDao{
+
+}

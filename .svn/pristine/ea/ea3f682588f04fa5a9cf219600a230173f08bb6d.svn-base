@@ -1,0 +1,17 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtMaterialResourcesDao extends BaseDao<MtMaterialResources>{
+	public List<MtMaterialResources> getResourceByCatalogId(String catalogId);
+
+	public List<MtMaterialResources> getBannerBySellerId(String id);
+
+	public Pagination<MtMaterialResources> getResourceBySellerId(String sellerId, int page, int rows);
+
+	public void doRemoveResourcesByIdArray(String[] array);
+}

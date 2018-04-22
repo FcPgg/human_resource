@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserPublishInfoProps;
+
+public interface MtUserPublishInfoPropsDao extends BaseDao<MtUserPublishInfoProps>{
+
+	List<MtUserPublishInfoProps> getPropsByInfoId(String infoId);
+
+	void clearProps(String infoId);
+
+}

@@ -1,0 +1,124 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSellerSettledApply;
+import com.xt.ptus.mt.service.MtSellerSettledApplyService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "mt/sellerSettledApply")
+public class MtSellerSettledApplyController extends BaseController<MtSellerSettledApply> {
+	
+	private static Logger logger = Logger.getLogger(MtGoodsController.class);
+	
+	@Resource
+	private MtSellerSettledApplyService service;
+	
+	/**
+	 * 商家申请
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("listNormalSellerApply")
+	@ResponseBody
+	public Result listNormalSellerApply(HttpServletRequest request){
+	
+		Result result = new Result();
+
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                   
+		try {
+			DetachedCriteria dc = DetachedCriteria.forClass(MtSellerSettledApply.class);
+			dc.addOrder(Order.desc("applyTime"));
+			result.setData(service.getWithPagination(dc, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * 获取申请详情
+	 */
+	@RequestMapping("getApplyInfo")
+	@ResponseBody
+	public Result getApplyInfo(HttpServletRequest request){
+		Result result = new Result();
+        String id = request.getParameter("id");
+		try {
+			result.setData(service.getApplyInfo(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 审核商家通过
+	 */
+	@RequestMapping("agreeExamine")
+	@ResponseBody
+	public Result agreeExamine(@RequestParam("id") String id){
+		
+		Result result = new Result();
+		try {
+			service.agreeExamine(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+		
+	}
+	
+	/**
+	 * 审核商家不通过
+	 */
+	@RequestMapping("disagreeExamine")
+	@ResponseBody
+	public Result disagreeExamine(@RequestParam("id") String id, @RequestParam("failReason") String reason){
+		
+		Result result = new Result();
+		try {
+			service.disagreeExamine(id, reason);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+		
+	}
+}

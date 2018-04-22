@@ -1,0 +1,85 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtCreditOrder;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtCreditOrderService extends BaseService<MtCreditOrder>{
+
+	void createCreditOrder(MtCreditOrder cOrder);
+
+	void updateStreamInfo(String streamCompany, String streamNo, int orderGoodsId);
+
+	
+	public List<MtCreditOrder> getCreditOrder(String sellerId);
+
+	/**
+	 * 查看退货单详细
+	 * @param creditId
+	 * @param orderId
+	 * @param status
+	 * @return
+	 */
+	public MtCreditOrder getCreditOrderInfo(String creditId, String orderId);
+
+
+	/**
+	 * 退款列表
+	 * @return
+	 */
+	public List<MtCreditOrder> getCreditOrderByRefund();
+
+	/**
+	 * 同意退款
+	 * @param createOrderId
+	 * @param operatorId 
+	 * @return
+	 */
+	public MtCreditOrder refundAgree(String createOrderId, String operatorId);
+
+	/**
+	 * 退货单快递单号和物流公司编码
+	 * @param createOrderId
+	 * @return
+	 */
+	String getCreditOrderLogistics(String createOrderId);
+
+	String getCreditOrderStreamCompany(String creditId);
+	
+    /**
+     * 退货单列表
+     * @param sellerId
+     * @param page
+     * @param rows
+     * @return
+     */
+	public Pagination<MtCreditOrder>  getCreditOrderListBySellerId(String sellerId, int page, int rows);
+
+	/**
+	 * 同意退货
+	 * @param createOrderId
+	 * @param creditOrderStatusAggreeReturn
+	 * @return
+	 */
+	public MtCreditOrder aggreeReturnOfGoods(String createOrderId);
+
+	/**
+	 * 同意退货
+	 * @param createOrderId
+	 * @param disaggreeReason
+	 * @return
+	 */
+	public MtCreditOrder disagreeReturnOfGoods(String createOrderId, String disaggreeReason);
+
+	/**
+	 * 卖家收货
+	 * @param createOrderId
+	 * @return
+	 */
+	public MtCreditOrder goodsReceipt(String createOrderId);
+
+	Map<String, Object> getCreditOrderListByOrderId(String orderId, int pager, int limit);
+}

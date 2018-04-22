@@ -1,0 +1,244 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.xt.ptus.mt.controller.params.MtOrderGoodsParam;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.service.MtGoodsService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.RequestUtil;
+
+/**
+ * 移动端商品控制器
+ * @author Administrator
+ *
+ */
+@Controller
+@RequestMapping("/mt/mobile/mtGoods/")
+public class MtGoodsControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtGoodsControllerMobile.class);
+	
+	@Resource
+	private MtGoodsService service;
+	
+	/**
+	 * 获取复杂商品
+	 * @param id
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getComplexGoods")
+	private Result getComplexGoods(@RequestParam("id") String id, @RequestParam(name = "userId", required = false)String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getComplexGoods(id, userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 根据编号数组获取商品
+	 * @param params
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getGoodsByIds")
+	private Result getGoodsByIds(@RequestParam("params") String params){
+		Result result = new Result();
+
+		try {
+			Gson gson = new Gson();
+			MtOrderGoodsParam[] array = gson.fromJson(params, new TypeToken<MtOrderGoodsParam[]>(){}.getType());
+			if(array != null && array.length > 0){
+				result.setData(service.getGoodsByIds(array));
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商品列表
+	 * @param page
+	 * @param rows
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getGoodsList")
+	public Result getGoodsList(@RequestParam("page") String page, @RequestParam("rows") String rows, HttpServletRequest request){
+		Result result = new Result();
+
+		int pageSize = 1; 
+		int limit = 10;
+		try {
+			pageSize = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数!");
+		}
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request);
+			if(params.containsKey("page"))
+				params.remove("page");
+			if(params.containsKey("rows"))
+				params.remove("rows");
+			result.setData(service.getGoodsList(pageSize, limit, params));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取推荐商品
+	 * @param page
+	 * @param rows
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getRecommendsGoods")
+	public Result getRecommendsGoods(@RequestParam("page") String page, @RequestParam("rows") String rows){
+		Result result = new Result();
+
+		int pageSize = 1; 
+		int limit = 10;
+		try {
+			pageSize = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数!");
+		}
+		try {
+			result.setData(service.getRecommendsGoods(pageSize, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商家下的商品
+	 * @param sellerId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getGoodsBySellerId")
+	public Result getGoodsBySellerId(@RequestParam("sellerId") String sellerId, @RequestParam("page") String page, @RequestParam("rows") String rows){
+		Result result = new Result();
+
+		int pageSize = 1; 
+		int limit = 10;
+		try {
+			pageSize = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数!");
+		}
+		try {
+			result.setData(service.getGoodsBySellerId(sellerId, pageSize, limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getGoodsName")
+	public Result getGoodsName(@RequestParam("name") String name){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getGoodsName(name));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取用户关注的商品
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getUserAttenedGoods")
+	public Result getUserAttenedGoods(@RequestParam("userId") String userId){
+		Result result = new Result();
+
+		try {
+			result.setData(service.getUserAttenedGoods(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 更新商品数据
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateGoods")
+	public Result updateData(HttpServletRequest request) {
+		Result result = new Result();
+		try {
+			MtGoods goods = (MtGoods) (new Gson()).fromJson(request.getParameter("entity"), MtGoods.class);
+			service.update(goods);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+}

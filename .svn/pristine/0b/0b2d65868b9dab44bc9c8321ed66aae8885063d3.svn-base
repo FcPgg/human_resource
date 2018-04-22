@@ -1,0 +1,34 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.pojo.MtSellerPojo;
+
+public interface MtSellerDao extends BaseDao<MtSeller> {
+
+	// 通过名字获取商家
+	List<MtSeller> getSellerByName(String name);
+
+	// 根据分类获取商家
+	List<MtSeller> getSellerByCategoryId(int categoryId, int page, int rows);
+
+	// 获取商家
+	List<MtSellerPojo> getSellerByIds(String[] array);
+
+	List<MtSellerPojo> getAttentedSellers(String userId, String lng, String lat);
+
+	int getNewSeller(String name);
+
+	/**
+	 * 推荐商家
+	 * @return
+	 */
+	List<MtSeller> getRecommendsSellers();
+
+	List<MtSeller> getSellerName(String name);
+
+	List<MtSeller> getMySellersByUserInfoId(String userId);
+
+}

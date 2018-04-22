@@ -1,0 +1,69 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtIntegrateDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.entity.MtIntegrate;
+import com.xt.ptus.mt.entity.MtUserInfo;
+import com.xt.ptus.mt.service.MtUserInfoService;
+import com.xt.ptus.util.MD5Util;
+
+@Service
+public class MtUserInfoServiceImpl extends BaseServiceImpl<MtUserInfo> implements MtUserInfoService{
+
+	@Autowired
+	private MtUserInfoDao dao;
+	
+	@Autowired
+	private MtIntegrateDao integrateDao;
+	
+	@Override
+	public MtUserInfo getUserByUserName(String userName) {
+		return dao.getUserByUserName(userName);
+	}
+
+	@Override
+	public MtUserInfo getUserByUserName(String userName, String password,boolean isMobile) {
+		return dao.getUserByUserName(userName, password, isMobile);
+	}
+
+	@Override
+	public boolean matchUserPwd(String userId, String pwd) {
+		return dao.matchUserPwd(userId, pwd);
+	}
+
+	@Override
+	public MtUserInfo registerUserMobile(String userName, String password) {
+		MtUserInfo user = new MtUserInfo();
+		user.setUserName(userName);
+		user.setPassword(MD5Util.MD5(password));
+		user.setPhoneNo(userName);
+		user.setNickName("mt_" + user.getUserName());
+		user.setRegisterTime(new Date());
+		//设置未登录状态
+		user.setStatus(Constants.USER_STATUS_UNLOGIN);
+		//设置APP用户
+		user.setCategory(Constants.USER_INFO_CATEGORY_APP_USER);
+		user.setHeadImgUrl("default.jpg");
+		
+		dao.save(user);
+		
+		//注册赠送20个e币
+		MtIntegrate mi = new MtIntegrate();
+		mi.setAmount(20);
+		mi.setCreateTime(new Date());
+		mi.setRemark("注册赠送");
+		mi.setSource("注册赠送");
+		mi.setUserId(Integer.parseInt(user.getId()));
+		
+		integrateDao.save(mi);
+		
+		return user;
+	}
+}

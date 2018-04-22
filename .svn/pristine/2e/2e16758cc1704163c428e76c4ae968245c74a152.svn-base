@@ -1,0 +1,148 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.alipay.api.AlipayApiException;
+import com.xt.ptus.alipay.service.AlipayService;
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtUserAccountTradeLogDao;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtUserAccountTradeLog;
+import com.xt.ptus.mt.service.MtUserAccountTradeLogService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.DateUtil;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtUserAccountTradeLogServiceImpl extends BaseServiceImpl<MtUserAccountTradeLog> implements MtUserAccountTradeLogService{
+
+	@Autowired
+	private MtUserAccountTradeLogDao dao;
+	
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platformDao;
+	
+	@Override
+	public double getUserBalance(String userId) {
+		return dao.getUserBalance(userId);
+	}
+
+	@Override
+	public boolean rechargeBalanceByAlipay(String id, int amount) {
+		MtUserAccountTradeLog log = dao.get(id, MtUserAccountTradeLog.class);
+		if(log != null){
+			log.setAmount(amount);
+			log.setCategory(Constants.USER_TRADE_LOG_CATEGORY_RECHARGE_ACCOUNT);
+			log.setRemark("用户支付宝充值余额");
+			log.setSource("用户支付宝");
+			log.setTarget("充值余额");
+			log.setTradeTime(new Date());
+			dao.update(log);
+			
+			MtPlatformCapitalTradeLog pLog = new MtPlatformCapitalTradeLog();
+			pLog.setAmount(amount);
+			pLog.setOperator(log.getUserId());
+			pLog.setRemark("用户充值余额");
+			pLog.setSource("用户支付宝");
+			pLog.setTarget("充值" + amount + "元");
+			pLog.setTradeTime(new Date());
+			pLog.setUserRechargeId(Integer.parseInt(log.getId()));
+			platformDao.save(pLog);
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public Pagination<MtUserAccountTradeLog> getUserAccountHistory(String userId, int pager, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtUserAccountTradeLog.class);
+		
+		dc.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		
+		Pagination<MtUserAccountTradeLog> pagination = dao.findByPagination(dc, pager, rows, Order.desc("tradeTime"));
+
+		if(pagination.getData() != null && pagination.getData().size() > 0){
+	    	 
+			for(MtUserAccountTradeLog mt : pagination.getData()){
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(mt.getTradeTime());
+				
+				String month =  String.format("%02d", cal.get(Calendar.MONTH) + 1);
+				String date = String.format("%02d", cal.get(Calendar.DATE));
+				if(DateUtil.isThisWeek(mt.getTradeTime().getTime())){
+					mt.setTradeTimeFormat(DateUtil.getWeekOfDate(mt.getTradeTime()) + " " + month + "-" + date);
+				} else if(DateUtil.isThisMonth(mt.getTradeTime().getTime())){
+					mt.setTradeTimeFormat("本月 " + month + "-" + date);
+				} else {
+					mt.setTradeTimeFormat(month + "月" + month + "-" + date);
+				}
+			}
+		}
+		return pagination;
+	}
+
+	@Override
+	public Result withdrawCashAlipay(String userId, double cash, String targetAlipayUser) throws AlipayApiException, IOException {
+		Result result = new Result();
+		
+		if(cash < 0.1){
+			result.setSuccess(false);
+			result.setMessage("提现金额最低0.1元");
+			return result;
+		}
+		
+		double total = dao.getUserBalance(userId);
+		if(cash <= total){
+			if(!StringUtil.IsNullOrEmpty(targetAlipayUser)){
+				
+				boolean ifSuccess = AlipayService.getInstance().transfer(targetAlipayUser, MD5Util.MD5((new Date()).toString()), cash, "用户提现");
+				if(ifSuccess){
+					MtUserAccountTradeLog log = new MtUserAccountTradeLog();
+					log.setAmount(-cash);
+					log.setCategory(Constants.USER_TRADE_LOG_CATEGORY_WITHDRAW_CASH);
+					log.setOperator(Integer.parseInt(userId));
+					log.setRemark("用户提现到支付宝");
+					log.setSource("e掌柜电商平台");
+					log.setTarget("支付宝账户");
+					log.setTradeTime(new Date());
+					log.setUserId(Integer.parseInt(userId));
+					dao.save(log);
+					
+					MtPlatformCapitalTradeLog pLog = new MtPlatformCapitalTradeLog();
+					pLog.setAmount(-cash);
+					pLog.setOperator(Integer.parseInt(userId));
+					pLog.setRemark("用户提现到支付宝");
+					pLog.setSource("e掌柜电商平台");
+					pLog.setTarget("用户支付宝账户");
+					pLog.setTradeTime(new Date());
+					pLog.setUserWithdrawalsId(Integer.parseInt(log.getId()));
+					platformDao.save(pLog);
+					result.setSuccess(true);
+				} else {
+					result.setSuccess(false);
+					result.setMessage("提现失败");
+				}
+			} else {
+				result.setSuccess(false);
+				result.setMessage("提现账户不存在");
+			}	
+		} else {
+			result.setSuccess(false);
+			result.setMessage("余额不足");
+		}
+		
+		return result;
+	}
+}

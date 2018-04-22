@@ -1,0 +1,12 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtMaterialCatalog;
+
+public interface MtMaterialCatalogDao extends BaseDao<MtMaterialCatalog>{
+	public List<MtMaterialCatalog> getMaterialCatalogBySellerId(String sellerId);
+
+	public MtMaterialCatalog findRootCatalog(String sellerId);
+}

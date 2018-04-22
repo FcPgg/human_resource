@@ -1,0 +1,36 @@
+package  com.xt.ptus.mt.dao.impl;
+
+
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.SQLQuery;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtUserSearchLogDao;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtUserSearchLog;
+
+@Repository
+public class MtUserSearchLogDaoImpl extends BaseDaoImpl<MtUserSearchLog> implements MtUserSearchLogDao{
+
+	@Override
+	public void clearSearchLog(String userId) {
+		SQLQuery query = getCurrentSession().createSQLQuery("DELETE FROM mt_user_search_log where user_id = ?");
+		query.setParameter(0, Integer.parseInt(userId));
+		query.executeUpdate();
+	}
+
+	@Override
+	public List<MtUserSearchLog> getUserSearchLog(String userId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserSearchLog.class);
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		return criteria.list();
+	}
+
+	
+}

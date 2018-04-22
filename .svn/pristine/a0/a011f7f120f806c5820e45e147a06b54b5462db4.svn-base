@@ -1,0 +1,365 @@
+package com.xt.ptus.mt.entity;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.Formula;
+
+import com.xt.ptus.base.BaseEntity;
+
+@Entity
+@SuppressWarnings("serial")
+@Table(name = "mt_goods")
+public class MtGoods extends BaseEntity {
+	
+	@Column(name = "seller_id", columnDefinition = "int(11)")
+	private int sellerId;
+	
+	@Column(name = "second_level_category", columnDefinition = "int(11)")
+	private int secondLevelCategory;
+	
+	@Column(name = "name", columnDefinition = "varchar(200)")
+	private String name;
+	
+	@Column(name = "vender", columnDefinition = "varchar(500)")
+	private String vender;
+	
+	@Column(name = "address", columnDefinition = "varchar(500)")
+	private String address;
+	
+	@Column(name = "description", columnDefinition = "varchar(500)")
+	private String description;
+	
+	@Column(name = "click_count", columnDefinition = "int(11)")
+	private int clickCount;
+	
+	@Column(name = "rate", columnDefinition = "decimal(3,2)")
+	private double rate;
+	
+	@Column(name = "status", columnDefinition = "int(11)")
+	private int status;
+	
+	@Column(name = "updator", columnDefinition = "int(11)")
+	private int updator;
+	
+	@Column(name = "udpate_time", columnDefinition = "datetime")
+	private Date udpateTime;
+	
+	@Column(name = "creator", columnDefinition = "int(11)")
+	private int creator;
+	
+	@Column(name = "create_time", columnDefinition = "datetime")
+	private Date createTime;
+	
+	@Column(name = "undercarriagor", columnDefinition = "int(11)")
+	private int undercarriageor;
+	
+	@Column(name = "undercarriage_time", columnDefinition = "datetime")
+	private Date undercarriageTime;
+	
+	@Column(name = "remark", columnDefinition = "varchar(500)")
+	private String remark;
+	
+	@Column(name = "postage", columnDefinition = "decimal(18,2)")
+	private double postage;
+	
+	@Column(name = "cashback", columnDefinition = "decimal(18,2)")
+	private double cashback;
+	
+	@Column(name = "detail_description", columnDefinition = "varchar")
+	private String detailDescription;
+	
+	@Transient
+	private int indexResourceId;
+	
+	@Formula("(select r.access_url from mt_material_resources r where r.id = (select g.resource_id from mt_goods_gallery g where g.goods_id = id and g.sort = 0))")
+	private String indexResourceAccessUrl;
+	
+	/*
+	 * 获取分类名称
+	 */
+	@Formula(value = "(select a.category_name from mt_second_level_category a where a.id = second_level_category)")
+	private String secondLevelCategoryName;
+
+	/**
+	 * 商品规格
+	 */
+	@Transient
+	private List<MtGoodsSpec> goodsSpecs;
+	
+	@Transient
+	private List<MtGoodsParams> goodsParams;
+	
+	@Transient
+	private List<MtGoodsGallery> goodsGallery;
+	
+	@Transient
+	private List<MtGoodsValuation> goodsValuations;
+	
+	@Transient
+	private double minPrice;
+	
+	@Transient
+	private double maxPrice;
+	
+	/**
+	 * 商品月销量
+	 * @return
+	 */
+	@Transient
+	private int goodsMonthSaleCount;
+	
+	/**
+	 * 商品总销量
+	 * @return
+	 */
+	@Transient
+	private int goodsSaleCount;
+	
+	
+	
+	public int getGoodsMonthSaleCount() {
+		return goodsMonthSaleCount;
+	}
+
+	public void setGoodsMonthSaleCount(int goodsMonthSaleCount) {
+		this.goodsMonthSaleCount = goodsMonthSaleCount;
+	}
+
+	public int getGoodsSaleCount() {
+		return goodsSaleCount;
+	}
+
+	public void setGoodsSaleCount(int goodsSaleCount) {
+		this.goodsSaleCount = goodsSaleCount;
+	}
+
+	public int getSellerId(){
+		return this.sellerId;
+	}
+	
+	public void setSellerId(int sellerId){
+		this.sellerId = sellerId;
+	}
+	
+	public int getSecondLevelCategory(){
+		return this.secondLevelCategory;
+	}
+	
+	public void setSecondLevelCategory(int secondLevelCategory){
+		this.secondLevelCategory = secondLevelCategory;
+	}
+	
+	public String getName(){
+		return this.name;
+	}
+	
+	public void setName(String name){
+		this.name = name;
+	}
+	
+	public String getVender(){
+		return this.vender;
+	}
+	
+	public void setVender(String vender){
+		this.vender = vender;
+	}
+	
+	public String getAddress(){
+		return this.address;
+	}
+	
+	public void setAddress(String address){
+		this.address = address;
+	}
+	
+	public String getDescription(){
+		return this.description;
+	}
+	
+	public void setDescription(String description){
+		this.description = description;
+	}
+	
+	public int getClickCount(){
+		return this.clickCount;
+	}
+	
+	public void setClickCount(int clickCount){
+		this.clickCount = clickCount;
+	}
+	
+	public double getRate(){
+		return this.rate;
+	}
+	
+	public void setRate(double rate){
+		this.rate = rate;
+	}
+	
+	public int getStatus(){
+		return this.status;
+	}
+	
+	public void setStatus(int status){
+		this.status = status;
+	}
+	
+	public int getUpdator(){
+		return this.updator;
+	}
+	
+	public void setUpdator(int updator){
+		this.updator = updator;
+	}
+	
+	public Date getUdpateTime(){
+		return this.udpateTime;
+	}
+	
+	public void setUdpateTime(Date udpateTime){
+		this.udpateTime = udpateTime;
+	}
+	
+	public int getCreator(){
+		return this.creator;
+	}
+	
+	public void setCreator(int creator){
+		this.creator = creator;
+	}
+	
+	public Date getCreateTime(){
+		return this.createTime;
+	}
+	
+	public void setCreateTime(Date createTime){
+		this.createTime = createTime;
+	}
+	
+	public int getUndercarriageor() {
+		return undercarriageor;
+	}
+
+	public void setUndercarriageor(int undercarriageor) {
+		this.undercarriageor = undercarriageor;
+	}
+
+	public Date getUndercarriageTime() {
+		return undercarriageTime;
+	}
+
+	public void setUndercarriageTime(Date undercarriageTime) {
+		this.undercarriageTime = undercarriageTime;
+	}
+
+	public String getRemark(){
+		return this.remark;
+	}
+	
+	public void setRemark(String remark){
+		this.remark = remark;
+	}
+	
+	public double getPostage(){
+		return this.postage;
+	}
+	
+	public void setPostage(double postage){
+		this.postage = postage;
+	}
+	
+	public int getIndexResourceId(){
+		return this.indexResourceId;
+	}
+	
+	public void setIndexResourceId(int indexResourceId){
+		this.indexResourceId = indexResourceId;
+	}
+
+	public String getSecondLevelCategoryName() {
+		return secondLevelCategoryName;
+	}
+
+	public void setSecondLevelCategoryName(String secondLevelCategoryName) {
+		this.secondLevelCategoryName = secondLevelCategoryName;
+	}
+
+	public List<MtGoodsSpec> getGoodsSpecs() {
+		return goodsSpecs;
+	}
+
+	public void setGoodsSpecs(List<MtGoodsSpec> goodsSpecs) {
+		this.goodsSpecs = goodsSpecs;
+	}
+
+	public List<MtGoodsParams> getGoodsParams() {
+		return goodsParams;
+	}
+
+	public void setGoodsParams(List<MtGoodsParams> goodsParams) {
+		this.goodsParams = goodsParams;
+	}
+
+	public List<MtGoodsGallery> getGoodsGallery() {
+		return goodsGallery;
+	}
+
+	public void setGoodsGallery(List<MtGoodsGallery> goodsGallery) {
+		this.goodsGallery = goodsGallery;
+	}
+
+	public String getIndexResourceAccessUrl() {
+		return indexResourceAccessUrl;
+	}
+
+	public void setIndexResourceAccessUrl(String indexResourceAccessUrl) {
+		this.indexResourceAccessUrl = indexResourceAccessUrl;
+	}
+
+	public double getMinPrice() {
+		return minPrice;
+	}
+
+	public void setMinPrice(double minPrice) {
+		this.minPrice = minPrice;
+	}
+
+	public double getMaxPrice() {
+		return maxPrice;
+	}
+
+	public void setMaxPrice(double maxPrice) {
+		this.maxPrice = maxPrice;
+	}
+
+	public String getDetailDescription() {
+		return detailDescription;
+	}
+
+	public void setDetailDescription(String detailDescription) {
+		this.detailDescription = detailDescription;
+	}
+
+	public List<MtGoodsValuation> getGoodsValuations() {
+		return goodsValuations;
+	}
+
+	public void setGoodsValuations(List<MtGoodsValuation> goodsValuations) {
+		this.goodsValuations = goodsValuations;
+	}
+
+	public double getCashback() {
+		return cashback;
+	}
+
+	public void setCashback(double cashback) {
+		this.cashback = cashback;
+	}
+}

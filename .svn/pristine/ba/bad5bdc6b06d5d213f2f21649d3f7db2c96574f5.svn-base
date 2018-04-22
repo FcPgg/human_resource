@@ -1,0 +1,38 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.constants.SystemConstants;
+import com.xt.ptus.mt.entity.MtSignIn;
+import com.xt.ptus.mt.service.MtSignInService;
+import com.xt.ptus.sys.service.SysDictionaryDatasService;
+
+@Controller
+@RequestMapping(value = "/mt/mtSignIn/")
+public class MtSignInController extends BaseController<MtSignIn> {
+	
+	@Resource
+	private MtSignInService service;
+	
+	@Resource
+	private SysDictionaryDatasService dictService;
+	
+	@RequestMapping("showEditor")
+	private ModelAndView showEditor(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView("mt/sign_in/editor");
+		
+		if(request.getParameterMap().containsKey("id")){
+			mav.addObject("entity", service.get(request.getParameter("id")));
+		}
+		
+		mav.addObject("dictionary", dictService.getDictionaryByCode(SystemConstants.DICTIONARY_CODE_WEEK, null));
+		
+		return mav;
+	}
+}

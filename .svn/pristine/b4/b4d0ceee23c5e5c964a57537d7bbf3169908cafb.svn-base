@@ -1,0 +1,45 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtSecondhandContainerCategoryDao;
+import com.xt.ptus.mt.dao.MtUserPublishPropsTemplateDao;
+import com.xt.ptus.mt.entity.MtSecondhandContainerCategory;
+import com.xt.ptus.mt.entity.MtUserPublishPropsTemplate;
+import com.xt.ptus.mt.service.MtSecondhandContainerCategoryService;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtSecondhandContainerCategoryServiceImpl extends BaseServiceImpl<MtSecondhandContainerCategory> implements MtSecondhandContainerCategoryService{
+	
+	@Autowired
+	private MtSecondhandContainerCategoryDao dao;
+	
+	@Autowired
+	private MtUserPublishPropsTemplateDao propDao;
+	
+	@Override
+	public void afterUpdate(MtSecondhandContainerCategory t) {
+		if(t.getProps() != null && t.getProps().size() > 0){
+			for(MtUserPublishPropsTemplate temp : t.getProps()){
+				if(!StringUtil.IsNullOrEmpty(temp.getId()) && Integer.parseInt(temp.getId()) > 0){
+					propDao.update(temp);
+				} else {
+					temp.setInfoId(Integer.parseInt(t.getId()));
+					propDao.save(temp);
+				}
+			}
+		}
+	}
+
+	@Override
+	public MtSecondhandContainerCategory getComplexData(String id) {
+		MtSecondhandContainerCategory mscc = dao.get(id, MtSecondhandContainerCategory.class);
+		if(mscc != null){
+			mscc.setProps(propDao.getPropsByInfoId(id));
+		}
+		return mscc;
+	}
+}

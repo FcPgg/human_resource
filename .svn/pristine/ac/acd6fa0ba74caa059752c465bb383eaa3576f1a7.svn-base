@@ -1,0 +1,36 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtUserAddressDao;
+import com.xt.ptus.mt.entity.MtUserAddress;
+import com.xt.ptus.mt.service.MtUserAddressService;
+
+@Service
+public class MtUserAddressServiceImpl extends BaseServiceImpl<MtUserAddress> implements MtUserAddressService{
+
+	@Autowired
+	private MtUserAddressDao dao;
+	
+	@Override
+	public List<MtUserAddress> getAddressByUserId(String userId) {
+		return dao.getAddressByUserId(userId);
+	}
+	
+	@Override
+	public void beforeUpdate(MtUserAddress t) {
+		if(t.getIfDefault().equals(Constants.USER_SHIPPING_ADDRESS_DEFAULT)){
+			dao.resetAddressByUserId(t.getUserId());
+		}
+	}
+
+	@Override
+	public MtUserAddress getDefaultAddressByUserId(String userId) {
+		return dao.getDefaultAddressByUserId(userId);
+	}
+}

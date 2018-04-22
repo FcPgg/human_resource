@@ -1,0 +1,200 @@
+package com.xt.ptus.mt.controller;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.service.MtSellerService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mtSeller/")
+public class MtSellerController extends BaseController<MtSeller> {
+
+	private static Logger logger = Logger.getLogger(MtSellerController.class);
+
+	@Resource
+	private MtSellerService sellerService;
+	
+	@RequestMapping("openSellerEditor")
+	private ModelAndView openSellerEditor(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView("mt/seller/editor");
+		if(request.getParameterMap().containsKey("id") && request.getParameter("id") != null){
+			MtSeller seller = sellerService.getComplexSeller(request.getParameter("id"));
+			mav.addObject("entity", seller);
+			
+			if(seller != null){
+				mav.addObject("gallery", toJSON(seller.getSellerGallery()));
+			}
+		}
+		return mav;
+	}
+
+	/**
+	 * 获取商家
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("listNormalSeller")
+	public Result listNormalSeller(HttpServletRequest request){
+		Result result = new Result();
+		
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch(Exception e ){
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+                                                                                                                                                                                                                                         
+		try {
+			DetachedCriteria dc = DetachedCriteria.forClass(MtSeller.class);
+			result.setData(sellerService.getWithPagination(dc, page, rows, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getSellerByCategoryId")
+	public Result getSellerByCategoryId(HttpServletRequest request) {
+		Result result = new Result();
+
+		int page = 1;
+		int rows = 10;
+		try {
+			page = Integer.parseInt(request.getParameter("page"));
+			rows = Integer.parseInt(request.getParameter("rows"));
+		} catch (Exception e) {
+			logger.info("转换参数异常，使用默认分页数据");
+		}
+
+		try {
+			result.setData(sellerService.getSellerByCategoryId(Integer.parseInt(request.getParameter("categoryId")), page, rows));
+			result.setSuccess(true);
+			result.setMessage("获取商家成功");
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("获取商家失败");
+			result.setError(e.getMessage());
+		}
+
+		return result;
+	}
+
+	@ResponseBody
+	@RequestMapping("getSellerBySellerName")
+	public Result getSellerBySellerName(HttpServletRequest request) {
+		Result result = new Result();
+		try {
+			result.setData(sellerService.getSellerBySellerName(request.getParameter("name")));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 更新商家
+	 * 
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateData")
+	public Result updateData(HttpServletRequest request) {
+		Result result = new Result();
+		try {
+			MtSeller seller = (MtSeller) fromJSON(request.getParameter("entity"), MtSeller.class);
+			sellerService.update(seller);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+
+	/**
+	 * 获复杂商家
+	 */
+	@ResponseBody
+	@RequestMapping("getComplexSeller")
+	public Result getComplexSeller(@RequestParam("id") String id) {
+
+		Result result = new Result();
+		try {
+			result.setData(sellerService.getComplexSeller(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 获取商家七日销售业绩
+	 */
+	@ResponseBody
+	@RequestMapping("getSellerSevenDayAchievement")
+	public Result getSellerSevenDayAchievement(@RequestParam("id") String id){
+
+		Result result = new Result();
+		try {
+			result.setData(sellerService.getSellerSevenDayAchievement(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 获取商家30天销售笔数
+	 * 
+	 */
+	@ResponseBody
+	@RequestMapping("getSellerAchievement")
+	public Result getSellerAchievement(@RequestParam("id") String id){
+
+		Result result = new Result();
+		try {
+			result.setData(sellerService.getSellerAchievement(id));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+	}
+	
+}

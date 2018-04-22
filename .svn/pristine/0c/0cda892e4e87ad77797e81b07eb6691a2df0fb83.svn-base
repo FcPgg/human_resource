@@ -1,0 +1,120 @@
+package com.xt.ptus.mt.controller;
+
+import java.util.Date;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.alipay.service.AlipayService;
+import com.xt.ptus.base.BaseController;
+import com.xt.ptus.mt.controller.mobile.MtOrderInfoControllerMobile;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.service.MtPlatformCapitalTradeLogService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.MD5Util;
+
+@Controller
+@RequestMapping(value = "/mt/mtPlatformCapitalTradeLog/")
+public class MtPlatformCapitalTradeLogController extends BaseController<MtPlatformCapitalTradeLog> {
+	
+	private static Logger logger = Logger.getLogger(MtPlatformCapitalTradeLog.class);
+	
+	@Resource
+	private MtPlatformCapitalTradeLogService service;
+	
+	/*
+	 * 获取平台资金记录
+	 */
+	@RequestMapping("listNormalPlatformCapitalTradeLog")
+	@ResponseBody
+	public Result listNormalPlatformCapitalTradeLog(@RequestParam("page")String page ,@RequestParam("rows")String rows){
+		
+        Result result = new Result();
+        int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页数据转换异常，使用默认页码:page = 1，行数:rows=10");
+		}
+
+		try {
+		 	result.setData(service.getPlatformCapitalTradeLog(pager,limit));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+
+	}
+	
+	/**
+	 * 获取平台可提现金额
+	 */
+	@RequestMapping("platformWithdrawalsMoney")
+	@ResponseBody
+    public Result platformWithdrawalsMoney(){
+		Result result = new Result();
+			try {
+				result.setData(service.platformWithdrawalsMoney());
+				result.setSuccess(true);
+			} catch (Exception e) {
+				result.setSuccess(false);
+				result.setMessage("操作失败");
+				result.setError(e.getMessage());
+				logger.error(e);
+			}
+		return result;
+	}
+	
+	 /**
+     * 平台提现
+     */
+    @RequestMapping("platformWithdrawals")
+    @ResponseBody
+    public Result sellerWithdrawals(@RequestParam("alipayAccountNumber")String alipayAccountNumber,@RequestParam("alipayAmount")double alipayAmount){
+   	 Result result = new Result();
+   	 boolean isSuccess = false;
+		try {
+			 isSuccess = AlipayService.getInstance().transfer(alipayAccountNumber, MD5Util.MD5((new Date().toString())),alipayAmount, "平台提现");
+	 		 result.setData(service.platformWithdrawals(alipayAmount,alipayAccountNumber));
+	 		 result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setMessage("操作失败");
+			result.setError(e.getMessage());
+			logger.error(e);
+		}
+		return result;
+    	 
+    }
+    
+    /**
+     * 平台全部资金
+     */
+    @RequestMapping("platformAllMoney")
+	@ResponseBody
+    public Result platformAllMoney(){
+		Result result = new Result();
+			try {
+				result.setData(service.platformAllMoney());
+				result.setSuccess(true);
+			} catch (Exception e) {
+				result.setSuccess(false);
+				result.setMessage("操作失败");
+				result.setError(e.getMessage());
+				logger.error(e);
+			}
+		return result;
+	}
+
+}

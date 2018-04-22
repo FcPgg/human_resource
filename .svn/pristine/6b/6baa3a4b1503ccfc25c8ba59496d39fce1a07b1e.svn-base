@@ -1,0 +1,13 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtWinningLog;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtWinningLogService extends BaseService<MtWinningLog>{
+
+	Pagination<MtWinningLog> getUserWinningLog(String userId, int page, int rows);
+
+	MtWinningLog exchangeGoods(String id, String address, String phoneNumber, String receivor);
+
+}

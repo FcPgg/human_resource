@@ -1,0 +1,65 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+
+import org.hibernate.Criteria;
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtMessageConversationsDao;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+import com.xt.ptus.mt.service.MtMessageConversationsService;
+
+@Service
+public class MtMessageConversationsServiceImpl extends BaseServiceImpl<MtMessageConversations> implements MtMessageConversationsService{
+
+	@Autowired
+	private MtMessageConversationsDao dao;
+	
+	@Override
+	public List<MtMessageConversations> getConversationsByTarget(String userId) {
+		return dao.getConversationsByTarget(userId);
+	}
+
+	@Override
+	public List<MtMessageConversations> getConversationsBySource(String userId) {
+		return dao.getConversationsBySource(userId);
+	}
+	
+	/**
+	 * 删除会话之前删除聊天信息
+	 */
+	@Override
+	public void beforeRemove(MtMessageConversations t) {
+		Session session = getCurrentSession();
+		int[] array = new int[2];
+		array[0] = Integer.parseInt(t.getId());
+		
+		Criteria criteria = session.createCriteria(MtMessageConversations.class);
+		criteria.add(Property.forName("source").eq(t.getTarget()));
+		criteria.add(Property.forName("target").eq(t.getSource()));
+		MtMessageConversations con = (MtMessageConversations) criteria.uniqueResult();
+		
+		if(con != null){
+			dao.remove(con);
+			array[1] = Integer.parseInt(con.getId());
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		for(Integer i : array){
+			if(sb.length() > 0)
+				sb.append(",");
+			sb.append(i);
+		}
+		
+		SQLQuery query = session.createSQLQuery("DELETE FROM mt_message_contents where conversation_id in(" + sb.toString() + ")");
+		query.executeUpdate();
+		
+		
+	}
+}

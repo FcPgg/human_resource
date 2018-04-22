@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtMessageConversations;
+
+public interface MtMessageConversationsService extends BaseService<MtMessageConversations>{
+
+	List<MtMessageConversations> getConversationsByTarget(String userId);
+
+	List<MtMessageConversations> getConversationsBySource(String userId);
+
+}

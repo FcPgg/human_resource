@@ -1,0 +1,68 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerAmountDao;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.entity.MtSellerAmount;
+import com.xt.ptus.mt.service.MtSellerAmountService;
+
+@Service
+public class MtSellerAmountServiceImpl extends BaseServiceImpl<MtSellerAmount> implements MtSellerAmountService{
+
+	@Autowired
+	private MtSellerAmountDao sellerAmountDao;
+	
+	@Autowired
+	private MtPlatformCapitalTradeLogDao platformCapitalTradeLogDao;
+	/**
+	 * 获取余额
+	 */
+
+	@Override
+	public double getAmountMoeny(String sellerId) {
+		double amountSurplusMoeny = 0;
+		double sellerAmount  = sellerAmountDao.getSlleAmountMoney(sellerId);
+		amountSurplusMoeny = Double.valueOf(sellerAmount).doubleValue(); 
+		return amountSurplusMoeny;
+	}
+	
+	/**
+	 * 商家提现，平台资金、商家余额处理
+	 */
+	@Override
+	public MtSellerAmount sellerWithdrawals(String sellerId, double alipayAmount,String alipayAccountNumber) {
+		
+		//创建平台资金记录
+		MtPlatformCapitalTradeLog log = new MtPlatformCapitalTradeLog();
+		log.setAmount(-alipayAmount);
+		log.setOperator(Integer.parseInt(sellerId));
+		log.setRemark("商家提现");
+		log.setSource("平台");
+		log.setTarget("商家支付宝账户" + alipayAccountNumber);
+		log.setTradeTime(new Date());
+		//log.setSellerWithdrawalsId(sellerWithdrawalsId);
+		platformCapitalTradeLogDao.save(log);
+		
+		//商家账户
+		MtSellerAmount sellerAmount = new MtSellerAmount();
+		sellerAmount.setSellerId(Integer.parseInt(sellerId));
+		sellerAmount.setAmount(-alipayAmount);
+		sellerAmount.setSource("商家余额");
+		sellerAmount.setTarget("商家支付宝："+alipayAccountNumber);
+		sellerAmount.setTradeTime(new Date());
+		sellerAmountDao.save(sellerAmount);
+		return sellerAmount;
+	}
+
+
+}

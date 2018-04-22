@@ -1,0 +1,22 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtSellerRechargeTradeLog;
+import com.xt.ptus.mt.dao.MtSellerRechargeTradeLogDao;
+
+@Repository
+public class MtSellerRechargeTradeLogDaoImpl extends BaseDaoImpl<MtSellerRechargeTradeLog> implements MtSellerRechargeTradeLogDao{
+
+	@Override
+	public MtSellerRechargeTradeLog getAmountByOutTradeNo(String outTradeNo) {
+		Criteria criteria = getCurrentSession().createCriteria(MtSellerRechargeTradeLog.class);
+		criteria.add(Property.forName("RechargeOrderCode").eq(outTradeNo));
+		return (MtSellerRechargeTradeLog) criteria.uniqueResult();
+	}
+
+}

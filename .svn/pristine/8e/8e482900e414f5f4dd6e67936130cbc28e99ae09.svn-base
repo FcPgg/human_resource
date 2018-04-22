@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtWinningLog;
+import com.xt.ptus.mt.dao.MtWinningLogDao;
+
+@Repository
+public class MtWinningLogDaoImpl extends BaseDaoImpl<MtWinningLog> implements MtWinningLogDao{
+
+}

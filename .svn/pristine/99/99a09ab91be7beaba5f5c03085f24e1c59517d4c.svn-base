@@ -1,0 +1,29 @@
+package  com.xt.ptus.mt.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtSecondLevelCategoryDao;
+import com.xt.ptus.mt.entity.MtSecondLevelCategory;
+import com.xt.ptus.mt.service.MtSecondLevelCategoryService;
+
+@Service
+public class MtSecondLevelCategoryServiceImpl extends BaseServiceImpl<MtSecondLevelCategory> implements MtSecondLevelCategoryService{
+
+	@Autowired
+	private MtSecondLevelCategoryDao dao;
+	
+	@Override
+	public List<MtSecondLevelCategory> getDataBySellerId(String sellerId) {
+		return dao.getDataBySellerId(sellerId);
+	}
+
+	@Override
+	public MtSecondLevelCategory getCategoryById(String id) {
+		MtSecondLevelCategory secondLevelCategory = dao.get(id, MtSecondLevelCategory.class);
+		return secondLevelCategory;
+	}
+}

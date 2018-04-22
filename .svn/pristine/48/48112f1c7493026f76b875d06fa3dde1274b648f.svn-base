@@ -1,0 +1,31 @@
+ package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.dao.MtUserBrowseLogDao;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.mt.service.MtUserBrowseLogService;
+import com.xt.ptus.obejcts.Pagination;
+
+@Service
+public class MtUserBrowseLogServiceImpl extends BaseServiceImpl<MtUserBrowseLog> implements MtUserBrowseLogService{
+
+	@Autowired
+	private MtUserBrowseLogDao dao;
+	
+	
+	//获取用户访问过的商品
+	@Override
+	public Pagination<MtUserBrowseLog> getUserBrowseGoods(String userId,int page, int rows) {
+		return dao.getUserBrowseGoods(userId,page,rows);
+	}
+
+	//获取用户访问过的商家
+	@Override
+	public Pagination<MtUserBrowseLog> getUserBrowseSeller(String userId, int page,int rows) {
+		return dao.getUserBrowseSeller(userId,page,rows);
+	}
+
+}

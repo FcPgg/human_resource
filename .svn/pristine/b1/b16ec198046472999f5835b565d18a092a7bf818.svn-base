@@ -1,0 +1,80 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.entity.MtShopCar;
+import com.xt.ptus.mt.service.MtShopCarService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtShopCar/")
+public class MtShopCarControllerMobile{
+	
+	private static Logger logger = Logger.getLogger(MtShopCarControllerMobile.class);
+	
+	@Resource
+	private MtShopCarService service;
+	
+	@ResponseBody
+	@RequestMapping("getShopCarByUserId")
+	public Result getShopCarByUserId(@RequestParam("userId") String userId, HttpServletRequest request){
+		Result result = new Result();
+		try {
+			result.setData(service.getShopCarDataByUserId(userId));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			logger.error(e);
+			result.setSuccess(false);
+			result.setMessage("获取购物车数据失败");
+			result.setError(e.getMessage());
+		}
+		return result;
+	}
+	
+	@ResponseBody
+	@RequestMapping("addShopCarData")
+	public Result addShopCarData(MtShopCar shopCar){
+		Result result = new Result();
+
+		try {
+			MtShopCar car = service.getShopCarByParams(shopCar.getUserId(), shopCar.getSellerId(), shopCar.getGoodsId());
+			
+			if(car == null){
+				service.update(shopCar);
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+		
+	}
+	
+	@ResponseBody
+	@RequestMapping("removeShopCar")
+	public Result removeShopCarData(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			service.remove(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+		
+	}
+}

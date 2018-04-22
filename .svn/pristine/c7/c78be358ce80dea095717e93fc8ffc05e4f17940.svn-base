@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.entity.MtPlatformCapitalTradeLog;
+import com.xt.ptus.mt.dao.MtPlatformCapitalTradeLogDao;
+
+@Repository
+public class MtPlatformCapitalTradeLogDaoImpl extends BaseDaoImpl<MtPlatformCapitalTradeLog> implements MtPlatformCapitalTradeLogDao{
+
+}

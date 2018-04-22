@@ -1,0 +1,118 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.pojo.MtSellerPojo;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtSellerService extends BaseService<MtSeller>{
+	
+	/**
+	 * 根据分类获取商家
+	 * @param categoryId
+	 * @param page
+	 * @param rows
+	 * @return
+	 */
+	public Pagination<MtSeller> getSellerByCategoryId(int categoryId, int page, int rows);
+	
+	/**
+	 * 获取商家详情
+	 * @param id
+	 * @param userId 
+	 * @param lat 
+	 * @param lng 
+	 * @return
+	 */
+	public MtSellerPojo getSellerInfo(String id, String userId, double lng, double lat);
+
+	/**
+	 * 获取商家列表
+	 * @param lng
+	 * @param lat
+	 * @return
+	 */
+	public List<MtSellerPojo> listSellerInfo( double lng, double lat);
+
+	/**
+	 * 根据商家名获取商家
+	 * @param name
+	 * @return
+	 */
+	public boolean getSellerBySellerName(String name);
+	
+	
+    /**
+     * 根据分类获取商家
+     * @param categoryId
+     * @param lng
+     * @param lat
+     * @return
+     */
+	public List<MtSellerPojo> getSellerByCategoryIdToMobile(int categoryId, int page, int rows, double lng, double lat, String distance);
+
+	/**
+	 * 获取复杂商家
+	 * @param id
+	 * @return
+	 */
+	public MtSeller getComplexSeller(String id);
+
+	/**
+	 * 获取部分商家
+	 * @param array id组成的数组
+	 * @return
+	 */
+	public List<MtSellerPojo> getSellersByIds(String[] array);
+
+	/**
+	 * 获取关注的商家
+	 * @param userId
+	 * @param lng
+	 * @param lat
+	 * @return
+	 */
+	public List<MtSellerPojo> getAttentedSellers(String userId, String lng, String lat);
+
+	/**
+	 * 根据名称查询商家
+	 * @param name
+	 * @param lng
+	 * @param lat
+	 * @return
+	 */
+	public List<MtSellerPojo> getSellerByName(String name, double lng, double lat, int page, int rows);
+
+	/**
+	 * 获取推荐商家
+	 * @return
+	 */
+	public List<MtSellerPojo> getRecommendsSellers(double lng, double lat);
+
+	/**
+	 * 获取商家7天销售业绩
+	 * @param id
+	 * @return
+	 * @throws Exception 
+	 */
+	public List getSellerSevenDayAchievement(String id) throws Exception;
+
+	/**
+	 *  获取商家30天销售笔数
+	 * @param id
+	 * @return
+	 */
+	public List getSellerAchievement(String id);
+
+	public List<MtSeller> getSellerName(String name);
+
+	/**
+	 * 获取我的店铺
+	 * @param userId
+	 * @return
+	 */
+	public List<MtSeller> getMySellersByUserInfoId(String userId);
+}

@@ -1,0 +1,22 @@
+package com.xt.ptus.mt.service;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtPanicBuying;
+import com.xt.ptus.obejcts.Pagination;
+
+public interface MtPanicBuyingService extends BaseService<MtPanicBuying>{
+
+	void updatePanicBuying(MtPanicBuying panicBuying, String id);
+
+	//正在抢购
+	public Pagination<MtPanicBuying> getPanicBuyingList(int page, int rows);
+
+	//即将开始抢购
+	public Pagination<MtPanicBuying> getBeginMinuteList(int page, int rows) throws Exception;
+
+	//即将结束
+	public Pagination<MtPanicBuying> getSoonEndMinuteList(int page, int rows);
+
+	MtPanicBuying getPaincBuyingInfoById(String id);
+
+}

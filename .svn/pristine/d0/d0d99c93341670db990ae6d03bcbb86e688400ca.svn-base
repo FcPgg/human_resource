@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.service;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseService;
+import com.xt.ptus.mt.entity.MtUserAddress;
+
+public interface MtUserAddressService extends BaseService<MtUserAddress>{
+
+	List<MtUserAddress> getAddressByUserId(String userId);
+
+	MtUserAddress getDefaultAddressByUserId(String userId);
+
+}

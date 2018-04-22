@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.mt.dao.MtMessageContentsDao;
+import com.xt.ptus.mt.entity.MtMessageContents;
+
+@Repository
+public class MtMessageContentsDaoImpl extends BaseDaoImpl<MtMessageContents> implements MtMessageContentsDao{
+
+}

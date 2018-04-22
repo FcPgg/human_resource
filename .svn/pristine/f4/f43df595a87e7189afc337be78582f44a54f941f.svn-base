@@ -1,0 +1,377 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import java.util.Date;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.entity.MtUserInfo;
+import com.xt.ptus.mt.service.MtUserInfoService;
+import com.xt.ptus.obejcts.Result;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.RequestUtil;
+import com.xt.ptus.util.StringUtil;
+
+@Controller
+@RequestMapping(value = "/mt/mobile/mtUserInfo/")
+public class MtUserInfoControllerMobile{
+
+	private static Logger logger = Logger.getLogger(MtUserInfoControllerMobile.class);
+	
+	@Resource
+	private MtUserInfoService service;
+	
+	/**
+	 * 打开编辑器
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("showEditor")
+	private ModelAndView showEditor(HttpServletRequest request){
+		ModelAndView mav = new ModelAndView(request.getParameter("editor"));
+		MtUserInfo currentUser = (MtUserInfo) request.getSession().getAttribute("currentUser");
+		if(currentUser != null){
+			MtUserInfo user = service.get(currentUser.getId());
+			mav.addObject("user", user);
+		}
+		return mav;
+	}
+	
+	/**
+	 * 获取分页数据
+	 * @param page
+	 * @param rows
+	 * @param category
+	 * @param phoneNumber
+	 * @param name
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("doPagination")
+	public Result doPagination(@RequestParam("page")String page, 
+			@RequestParam("rows")String rows, 
+			@RequestParam("category") String category, 
+			@RequestParam(name = "phoneNumber", required = false) String phoneNumber,
+			@RequestParam(name = "name", required = false) String name) {
+		Result result = new Result();
+		
+		int pager = 1;
+		int limit = 10;
+		try {
+			pager = Integer.parseInt(page);
+			limit = Integer.parseInt(rows);
+		} catch (Exception e) {
+			logger.error("分页参数转换失败，使用默认分页参数!");
+		}
+		
+		try {
+			
+			DetachedCriteria dc = DetachedCriteria.forClass(MtUserInfo.class);
+			
+			if("app".equals(category)){
+				dc.add(Property.forName("category").eq(Constants.USER_INFO_CATEGORY_APP_USER));
+			} else if("sys".equals(category)){
+				dc.add(Property.forName("category").eq(Constants.USER_INFO_CATEGORY_SYSTEM_USER));
+			} else if("proxy".equals(category)){
+				dc.add(Property.forName("category").eq(Constants.USER_INFO_CATEGORY_PROXY_USER));
+			} else if("seller".equals(category)){
+				dc.add(Property.forName("category").eq(Constants.USER_INFO_CATEGORY_SELLER_USER));
+			}
+			if(!StringUtil.IsNullOrEmpty(phoneNumber)){
+				dc.add(Property.forName("phoneNo").like("%" + phoneNumber + "%"));
+			}
+			if(!StringUtil.IsNullOrEmpty(name)){
+				dc.add(Property.forName("name").like("%" + phoneNumber + "%"));
+			}
+			result.setData(service.getWithPagination(dc, pager, limit, "id"));
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 更新用户信息
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateUserInfo")
+	private Result updateUserInfo(HttpServletRequest request){
+		Result result = new Result();
+
+		try {
+			Map<String, Object> params = RequestUtil.requestParamsToMap(request); 
+			MtUserInfo user = service.get(params.get("id").toString());
+			if(user != null){
+				if(params.get("name") != null)
+					user.setName(params.get("name").toString());
+
+				if(params.get("nickName") != null)
+					user.setNickName(params.get("nickName").toString());
+				
+				if(params.get("phoneNo") != null)
+					user.setPhoneNo(params.get("phoneNo").toString());
+				
+				if(params.get("sex") != null)
+					user.setSex(Integer.parseInt(params.get("sex").toString()));
+				
+				if(params.get("idCardNo") != null)
+					user.setIdCardNo(params.get("idCardNo").toString());
+			}
+			
+			service.update(user);
+			result.setData(user);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 冻结用户账号
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("doForzenUser")
+	public Result doForzenUser(@RequestParam("userId") String userId, HttpServletRequest request){
+		Result result = new Result();
+
+		try {
+			MtUserInfo user = service.get(userId);
+			if(user != null){
+				user.setStatus(Constants.USER_STATUS_FORZENED);
+				MtUserInfo currentUser = (MtUserInfo) request.getSession().getAttribute("currentUser");
+				if(currentUser != null){
+					user.setUpdator(Integer.parseInt(currentUser.getId()));
+					user.setUpdateTime(new Date());
+				}
+				service.update(user);
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+
+	/**
+	 * 解冻用户账号
+	 * @param userId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("doThawUser")
+	public Result doThawUser(@RequestParam("userId") String userId, HttpServletRequest request){
+		Result result = new Result();
+		try {
+			MtUserInfo user = service.get(userId);
+			if(user != null){
+				MtUserInfo currentUser = (MtUserInfo) request.getSession().getAttribute("currentUser");
+				if(currentUser != null){
+					user.setUpdator(Integer.parseInt(currentUser.getId()));
+					user.setUpdateTime(new Date());
+				}
+				user.setStatus(Constants.USER_STATUS_UNLOGIN);
+				service.update(user);
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 验证用户密码
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/validatePassword")
+	public Result validatePassword(@RequestParam("id")String id, @RequestParam("password")String password){
+		Result result = new Result();
+		try {
+			//给密码加密
+			MtUserInfo user = service.get(id);
+			if(user != null){
+				result.setData(MD5Util.MD5(password).equals(user.getPassword()));
+			} else {
+				result.setData(false);
+			}
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+	/**
+	 * 重置用户密码
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/resetPassword")
+	public Result resetPassword(@RequestParam("id")String id, @RequestParam("password")String password){
+		Result result = new Result();
+		try {
+			//给密码加密
+			MtUserInfo user = service.get(id);
+			if(user != null){
+				user.setPassword(MD5Util.MD5(password));
+			}
+			this.service.update(user);
+			
+			user.setPassword("");
+			result.setData(user);
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+	/**
+	 * 设置用户支付密码
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/setPayPassword")
+	public Result setPayPassword(@RequestParam("id")String id, @RequestParam("payPwd")String payPwd){
+		Result result = new Result();
+		try {
+			//给密码加密
+			MtUserInfo user = service.get(id);
+			if(user != null){
+				user.setPayPwd(MD5Util.MD5(payPwd));
+			}
+			this.service.update(user);
+			
+			user.setPassword("");
+			result.setData(user);
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+	/**
+	 * 匹配用户支付密码
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/matchUserPwd")
+	public Result matchUserPwd(@RequestParam("userId")String userId, @RequestParam("pwd")String pwd){
+		Result result = new Result();
+		try {
+			result.setData(service.matchUserPwd(userId, pwd));
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+	/**
+	 * 重置用户支付密码
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/resetPayPassword")
+	public Result resetPayPassword(@RequestParam("id")String id, @RequestParam("password")String password){
+		Result result = new Result();
+		try {
+			//给密码加密
+			MtUserInfo user = service.get(id);
+			if(user != null){
+				user.setPassword(MD5Util.MD5(password));
+			}
+			this.service.update(user);
+			
+			user.setPassword("");
+			result.setData(user);
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * 头像修改
+	 * @param id
+	 * @param password
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/updateHeadSeculd")
+	public Result updateHeadSeculd(@RequestParam("id")String id, @RequestParam("attId")String attId){
+		Result result = new Result();
+		try {
+			//给密码加密
+			MtUserInfo user = service.get(id);
+			if(user != null){
+				user.setHeadImgAttId(Integer.parseInt(attId));
+				this.service.update(user);
+				
+				user = service.get(user.getId());
+				user.setPassword("");
+				result.setData(user);
+			}
+			result.setSuccess(true);
+		} catch (Exception ex) {
+			result.setSuccess(false);
+			result.setMessage(ex.getMessage());
+			logger.error(ex);
+		}
+		return result;
+	}
+	
+}

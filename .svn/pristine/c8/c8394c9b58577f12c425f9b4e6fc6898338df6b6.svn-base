@@ -1,0 +1,75 @@
+package  com.xt.ptus.mt.dao.impl;
+
+
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.entity.MtCreditOrder;
+import com.xt.ptus.mt.dao.MtCreditOrderDao;
+
+@Repository
+public class MtCreditOrderDaoImpl extends BaseDaoImpl<MtCreditOrder> implements MtCreditOrderDao{
+
+	@Override
+	public MtCreditOrder getCreditOrderByOrderGoodsId(int orderGoodsId) {
+		return (MtCreditOrder) getCurrentSession().createCriteria(MtCreditOrder.class).add(Property.forName("orderGoodsId").eq(orderGoodsId)).uniqueResult();
+	}
+
+	/**
+	 * 检查退货单数据是否存在
+	 * 
+	 */
+	@Override
+	public boolean checkCreditOrderExist(int orderGoodsId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtCreditOrder.class);
+		criteria.add(Property.forName("orderGoodsId").eq(orderGoodsId));
+		criteria.setProjection(Projections.rowCount());
+		return Integer.parseInt(criteria.uniqueResult().toString()) > 0;
+	}
+
+	@Override
+	public List<MtCreditOrder> getGoodsByGoodsId(String goodsId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtCreditOrder.class);
+		criteria.add(Property.forName("goodsId").eq(Integer.parseInt(goodsId)));
+		//criteria.add(Property.forName("status").eq(Constants.CREDIT_ORDER_STATUS_APPLY_FOR_RETURN));
+		List creditOrder = criteria.list();
+		return creditOrder;
+	}
+
+	/**
+	 * 退款单
+	 */
+	@Override
+	public List<MtCreditOrder> getCreditOrderByRefund() {
+		Criteria criteria = getCurrentSession().createCriteria(MtCreditOrder.class);
+		criteria.add(Property.forName("status").eq(Constants.CREDIT_ORDER_STATUS_RECEIVED));
+		List refundList = criteria.list();
+		return refundList;
+	}
+
+	/**
+	 * 退货物流单号
+	 */
+	@Override
+	public String getCreditOrderLogistics(String createOrderId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtCreditOrder.class);
+		criteria.add(Property.forName("id").eq(createOrderId));
+		criteria.setProjection(Projections.groupProperty("streamNo"));   
+		return criteria.uniqueResult().toString();
+	}
+
+	@Override
+	public String getCreditOrderStreamCompany(String creditId) {
+		Criteria criteria = getCurrentSession().createCriteria(MtCreditOrder.class);
+		criteria.add(Property.forName("id").eq(creditId));
+		criteria.setProjection(Projections.groupProperty("streamCompany"));   
+		return criteria.uniqueResult().toString();
+	}
+}

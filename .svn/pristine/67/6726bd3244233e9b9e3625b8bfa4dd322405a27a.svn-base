@@ -1,0 +1,87 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.log4j.Logger;
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Property;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.helper.QiNiuHelper;
+import com.xt.ptus.mt.entity.MtMaterialCatalog;
+import com.xt.ptus.mt.entity.MtMaterialResources;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.entity.MtShopCar;
+import com.xt.ptus.mt.dao.MtMaterialResourcesDao;
+import com.xt.ptus.obejcts.Pagination;
+
+@Repository
+public class MtMaterialResourcesDaoImpl extends BaseDaoImpl<MtMaterialResources> implements MtMaterialResourcesDao{
+	
+	private static Logger logger = Logger.getLogger(MtMaterialResourcesDaoImpl.class);
+
+	@Override
+	public List<MtMaterialResources> getResourceByCatalogId(String catalogId) {
+		Session session = getCurrentSession();
+		Criteria criteria = session.createCriteria(MtMaterialResources.class).add(Property.forName("catalogId").eq(Integer.parseInt(catalogId)));
+		return criteria.list();
+	}
+
+	@Override
+	public List<MtMaterialResources> getBannerBySellerId(String id) {
+		Criteria criteria = getCurrentSession().createCriteria(MtMaterialResources.class);
+		 // 关联  
+         criteria.setFetchMode("MtSellerGallery", org.hibernate.FetchMode.JOIN);  
+         criteria.add(Restrictions.eq("sellerId", Integer.parseInt(id)));  
+		List gallery = criteria.list();
+		return gallery;
+	}
+
+	@Override
+	public Pagination<MtMaterialResources> getResourceBySellerId(String sellerId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtMaterialResources.class);
+		
+		DetachedCriteria inCriteria = DetachedCriteria.forClass(MtMaterialCatalog.class);  
+		inCriteria.setProjection(Property.forName("id"));
+		inCriteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
+		
+		dc.add(Property.forName("catalogId").in(inCriteria));
+		
+		return this.findByPagination(dc, page, rows, Order.desc("uploadTime"));
+	}
+
+	@Override
+	public void doRemoveResourcesByIdArray(String[] array) {
+		if(array != null && array.length > 0){
+			InputStream in = this.getClass().getResourceAsStream("/system.properties");
+			Properties prop = new Properties();
+			try {
+				prop.load(in);
+				in.close();
+			} catch (IOException e) {
+				logger.error(e);
+			}
+			QiNiuHelper helper = new QiNiuHelper(prop.getProperty("qiniu.access_key"), prop.getProperty("qiniu.secret_key"), prop.getProperty("qiniu.bucketname"));
+			for(String id : array){
+				MtMaterialResources re = this.get(id, MtMaterialResources.class);
+				if(re != null){
+					String result = helper.removeFile(re.getNewFileName() + "." + re.getNewFileType());
+					if("success".equals(result)){
+						this.remove(re);
+					} else {
+						logger.error(result);
+					}
+				}
+			}
+		}
+	}
+}

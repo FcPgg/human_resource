@@ -1,0 +1,46 @@
+package  com.xt.ptus.mt.dao.impl;
+
+import java.util.List;
+
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Property;
+import org.springframework.stereotype.Repository;
+
+import com.xt.ptus.base.impl.BaseDaoImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtUserAccountDao;
+import com.xt.ptus.mt.entity.MtUserAccount;
+import com.xt.ptus.util.StringUtil;
+
+@Repository
+public class MtUserAccountDaoImpl extends BaseDaoImpl<MtUserAccount> implements MtUserAccountDao{
+
+	@Override
+	public List<MtUserAccount> getAccountByUserId(String userId, String category) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserAccount.class);
+		criteria.add(Property.forName("userId").eq(Integer.parseInt(userId)));
+		if(!StringUtil.IsNullOrEmpty(category)){
+			criteria.add(Property.forName("category").eq(category));
+		}
+		return criteria.list();
+	}
+
+	@Override
+	public MtUserAccount getDefaultAccountByUserId(String userId, String category) {
+		Criteria criteria = getCurrentSession().createCriteria(MtUserAccount.class)
+				.add(Property.forName("userId").eq(Integer.parseInt(userId)))
+				.add(Property.forName("ifDefault").eq(Constants.USER_ACCOUNT_DEFAULT));
+		
+		if(!StringUtil.IsNullOrEmpty(category)){
+			criteria.add(Property.forName("category").eq(category));
+		}
+		return (MtUserAccount) criteria.uniqueResult();
+	}
+
+	@Override
+	public List<MtUserAccount> getAlipayAccount(String userId) {
+		return getCurrentSession().createCriteria(MtUserAccount.class).add(Property.forName("userId").eq(Integer.parseInt(userId)))
+				.add(Property.forName("category").eq(Constants.USER_ACCOUNT_CATEGORY_ALIPAY)).list();
+	}
+}

@@ -1,0 +1,408 @@
+<%@ page language="java" contentType="text/html; charset=utf-8"
+	pageEncoding="utf-8"%>
+<html class="no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<%@ include file="../../common.jsp"%>
+</head>
+<body>
+       <input id="sellerId" style="display: none;" value="<%= currentUser != null ? currentUser.getSellerId() : null%>"/>
+		<div class=" admin-content">     
+			<div class="am-panel am-panel-default">
+			  <div class="am-panel-hd" style="height: 40px;">商品列表<button class="btn btn-primary btn-app btn-xs pull-right" style="margin-top: -5px;" data-toggle="modal" onclick="doAddGoods();">上架商品</button></div>
+			  <div class="am-panel-bd">
+			  	<form class="form-horizontal" role="form">
+                    <fieldset>
+                       <div class="form-group">
+                          <label class="col-sm-1 control-label" for="ds_host">名称</label>
+                          <div class="col-sm-2">
+                             <input class="form-control" id="goodsName" type="text" placeholder="商品名称"/>
+                          </div>
+                          <label class="col-sm-1 control-label" for="ds_name">分类</label>
+                          <div class="col-sm-2">
+                             <select class="form-control category" id="secondLevelCategory">
+                             	<option value="">--全部--</option>
+                             </select>
+                          </div>
+                          <label class="col-sm-1 control-label" for="ds_username">状态</label>
+                          <div class="col-sm-2">
+                             <select class="form-control" id="goodsStatus">
+                             	<option value="">--全部--</option>
+                             	<option value="0">在售</option>
+                             	<option value="9">已下架</option>
+                             </select>
+                          </div>
+                          <button class="btn btn-primary btn-app btn-xs " type="button" style="margin-top: -2px;" onclick="loadData(1);">查询</button>
+                          <button class="btn btn-warning btn-app btn-xs" type="reset" style="margin-top: -2px;">重置</button>
+                       </div>
+                    </fieldset>     
+                  </form>
+			  	<hr/>
+		          <table class="am-table am-table-bordered am-table-radius am-table-striped table-condensed  table-striped">
+		            <thead >
+		              <tr class="am-default" id="goods-table-head">
+		                <th class="id" style="display: none">编号</th>
+		                <th class="sellerId" style="display: none">商家编号</th>
+		                <th class="secondLevelCategory" style="display: none">二级分类编号</th>
+		                <th class="secondLevelCategoryName">分类</th>
+		                <th class="name">名称</th>
+		                <th class="description" style="width: 150px;">描述</th>
+		                <th class="status" style="display: none">状态</th>
+		                <th class="vender">厂家</th>
+		                <th class="address">产地</th>
+		                <th class="clickCount">点击量</th>
+		                <th class="rate">折扣率(/折)</th>
+		                <th class="postage">邮费</th>
+		                <th class="cashback">返现金额</th>
+		                <th class="status">在售<i class="am-icon-check am-text-warning"></i> /下架 <i class="am-icon-close am-text-primary"></i></th>
+		                <th class="creator" style="display: none">上架人</th>
+		                <th class="createTime"  style="display: none">上架时间</th>
+		                <th class="updator" style="display: none">修改人</th>
+		                <th class="udpateTime"  style="display: none">修改日期</th>
+		                <th class="undercarriageor" style="display: none">下架人</th>
+		                <th class="undercarriageTime"  style="display: none">下架时间</th>
+		                <th width="163px">操作</th>
+		              </tr>
+		            </thead>
+		            <tbody id="goodsList">
+		            </tbody>
+		          </table>
+      				<div id="example" style="text-align: center"> <ul id="pageLimit" class="pagination"></ul> </div>
+			  </div>
+			</div>
+		</div>
+	
+<script type="text/javascript">
+
+var EditorFactory = (function(){
+		var instance = null;
+		
+		function createEditor(){
+			var E = window.wangEditor
+			var eidtor = null;
+			editor = new E('#titleDiv', '#contentDiv')  // 两个参数也可以传入 elem 对象，class 选择器
+			editor.customConfig.menus = [
+		                                    'head',  // 标题
+		                                    'bold',  // 粗体
+		                                    'italic',  // 斜体
+		                                    'underline',  // 下划线
+		                                    'strikeThrough',  // 删除线
+		                                    'foreColor',  // 文字颜色
+		                                    'backColor',  // 背景颜色
+		                                    'justify',  // 对齐方式
+		                                    'image',  // 插入图片
+		                                    'table',  // 表格
+		                                    'undo',  // 撤销
+		                                    'redo'  // 重复
+		                                ];
+		       editor.customConfig.uploadImgServer = 'fileUpload'; //上传地址
+		       editor.customConfig.uploadImgMaxSize = 3 * 1024 * 1024;//图片大小
+		       editor.customConfig.uploadFileName = 'file';//上传图片属性名
+		       editor.customConfig.uploadImgHooks = {
+		   	    success: function (xhr, editor, result) {
+		   	        // 图片上传并返回结果，图片插入成功之后触发
+		   	        // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象，result 是服务器端返回的结果
+		   	        console.log("success");
+		   	        
+		   	    },
+		   	    fail: function (xhr, editor, result) {
+		   	        // 图片上传并返回结果，但图片插入错误时触发
+		   	        // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象，result 是服务器端返回的结果
+		   	    	console.log("fail");
+		   	    },
+		   	    error: function (xhr, editor) {
+		   	        // 图片上传出错时触发
+		   	        // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+		   	    	console.log("error");
+		   	    },
+		   	    timeout: function (xhr, editor) {
+		   	        // 图片上传超时时触发
+		   	        // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+		   	    	console.log("timeout");
+		   	    },
+
+		   	    // 如果服务器端返回的不是 {errno:0, data: [...]} 这种格式，可使用该配置
+		   	    // （但是，服务器端返回的必须是一个 JSON 格式字符串！！！否则会报错）
+		   	    customInsert: function (insertImg, result, editor) {
+		   	        // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+		   	        // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+
+		   	        // 举例：假如上传图片成功后，服务器端返回的是 {url:'....'} 这种格式，即可这样插入图片：
+			   	    var data = result.data
+	     	        if(data){
+	     	        	$.each(data, function(){
+			        	        insertImg("/Web/showImage?uuid=" + this.uuid + "." + this.srcFileType);
+	     	        	});
+     	        	}
+
+
+		   	        // result 必须是一个 JSON 格式字符串！！！否则报错
+		   	    }
+		    }
+		    editor.create();
+		    return editor;
+		};
+		
+		function createInstance(){
+			return new createEditor();
+		};
+		
+		return{
+			getInstance : function(){
+				if(!instance){
+					instance = createInstance();
+				}
+				return instance;
+			}
+		}
+})();
+
+$(function(){
+	loadData(1);
+});
+
+function loadData(page){
+	
+	var params = {page: page, rows: 10};
+	
+	if($("#goodsName").val()){
+		params.name = $("#goodsName").val();
+	}
+	
+	if($("#secondLevelCategory").val()){
+		params.secondLevelCategory = $("#secondLevelCategory").val();
+	}
+	
+	if($("#goodsStatus").val()){
+		params.status = $("#goodsStatus").val();
+	}
+	if($("#sellerId").val() != 0){
+		params.sellerId = $("#sellerId").val();
+	}
+	
+	$.post("mt/mtGoods/listNormalGoods", params, function(r){				
+		if(r.success){
+			if(r.data){
+				$("#goodsList").children().remove();
+				createGoodsList(r.data.data);
+				$.jqPaginator('#pageLimit',{
+					totalPages: r.data.totalPageNum,
+			        visiblePages: 10,
+			        currentPage: page,
+			        prev: '<li class="prev"><a href="javascript:;">上一页</a></li>',
+			        next: '<li class="next"><a href="javascript:;">下一页</a></li>',
+			        page: '<li class="page"><a href="javascript:;">{{page}}</a></li>',
+				    onPageChange: function (num, type) {
+				    	if(type == "change"){
+				    		loadData(num);
+				    	}
+				    }
+				});
+			}
+		}
+	});
+}
+
+//构建商品列表
+function createGoodsList(d){
+	 $.each(d, function(){
+		var tr = "<tr>"
+		var item = this; "WebRoot/META-INF/views/admin/groups_permission/group.jsp"
+	 	$.each($("#goods-table-head").children(), function(){
+	 		if($(this).attr("class") != null){
+		 		var td = "<td style='" + ($(this).attr("style") != null ? $(this).attr("style") : "") + "' class='" + $(this).attr("class") + "'>"
+		 		if("status" == $(this).attr("class")){
+		 			td += item["status"] == 0 ? '<i class="am-icon-check am-text-warning"></i>' : '<i class="am-icon-close am-text-primary"></i>';
+		 		} else if("rate" == $(this).attr("class")){
+		 			td += (item["rate"] == 0 || item["rate"] == 1 ? '无折扣' : item["rate"] * 10 + '折');
+		 		} else if("postage" == $(this).attr("class")){
+		 			td += (item["postage"] == 0 ? '包邮' : item["postage"] );
+		 		} else {
+			 		td += (item[$(this).attr("class")] != null ? item[$(this).attr("class")] : "");
+		 		}
+		 		td += "</td>";
+		 		tr += td;
+	 		}
+	 	});
+	 	tr += '<td><div class="am-btn-group am-btn-group-xs">';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-success am-round"  title="商品置顶"  onclick="doUpGoods($(this));"><span class="am-icon-level-up"></span> </button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="修改商品" onclick="doEditGoods($(this));"><span class="am-icon-pencil-square-o"></span></button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-danger am-round" title="下架" onclick="doUndercarriage($(this));"><span class="am-icon-trash-o" ></span></button>';
+	 	tr += '</div></td>';
+	 	tr += "</tr>";
+			$("#goodsList").append(tr);
+	  });
+}
+
+/**
+ * 查看商品详情
+ */
+function checkGoodById(id){
+	
+}
+
+/**
+ * 添加商品
+ */
+ var i = 0;
+function doAddGoods(){
+	$("#dialog").modal('show');
+	$("#dialogLabel").html('上架商品');
+	EditorFactory.getInstance();
+}
+
+/**
+ * 下架商品
+ */
+function doUndercarriage(e){
+	var id = e.parent().parent().parent().find(".id").html();
+	if( id && confirm("确定执行下架操作吗？此操作不可还原")){
+		$.post("mt/mtGoods/doUndercarriage",{id: id}, function(r){
+			if(r.success){
+				window.location = window.location;
+			} else {
+				alert(r.message);
+				console.log(r.error);
+			}
+		});
+	}
+}
+ 
+/**
+ * 修改
+ */
+function doEditGoods(e){
+	var id = e.parent().parent().parent().find(".id").html();
+	$.post("mt/mtGoods/getComplexGoods",{id:id}, function(r){
+		if(r.success){
+			$("#data-id").val(r.data.id);
+			$("#name").val(r.data.name);
+			$("#category").find("option[value=" + r.data.secondLevelCategory +"]").attr("selected",true);
+			$("#vender").val(r.data.vender);
+			$("#address").val(r.data.address);
+			$("#description").val(r.data.description);
+			$("#clickCount").val(r.data.clickCount);
+		  	$("#createTime").val(r.data.createTime);
+		  	$("#creator").val(r.data.creator);
+		  	$("#sellerId").val(r.data.sellerId);
+		  	$("#status").val(r.data.status);
+		  	$("#updateTime").val(r.data.updateTime);
+		  	$("#undercarriageTime").val(r.data.undercarriageTime);
+		  	$("#undercarriagor").val(r.data.undercarriagor);
+		  	$("#cashback").val(r.data.cashback);
+		  	$("#updator").val(r.data.updator);
+			
+			if(r.data.detailDescription){
+					/* editor.$txt.html(r.data.detailDescription); */
+					console.log(r.data.detailDescription);
+					var editor = EditorFactory.getInstance();
+					editor.txt.html(r.data.detailDescription);
+			}
+			$("#rate").val(r.data.rate);
+			if(r.data.postage > 0){
+				 $("#postage").attr("readOnly",false);
+				 $("#ifPostage").removeAttr("checked");
+				 $("#postage").val(r.data.postage);
+			} else {
+				$("#postage").attr("readOnly", true);
+				$("#ifPostage").attr("checked", "true"); 
+				$("#postage").val(0);
+			}
+			
+			//序列化规格
+			if(r.data.goodsSpecs != null && r.data.goodsSpecs.length > 0){
+				$("#spacesTable tbody").children().remove();
+				$.each(r.data.goodsSpecs, function(){
+					var row = "<tr>"
+			            row += '<td><a href="javascript:void(0);" onclick="removeSpaces($(this))">[-]删除 </a></div></td>';
+						row += '<td style="display: none"><input class="id" value="' + this.id + '"/></td>';
+			            row += '<td style="display: none"><input class="goodsId" value="' + this.goodsId + '"/></td>';
+			            row += '<td><input class="description" value="' + this.description + '"/></td>';
+			            row += '<td><input class="price" value="' + this.price + '"/></td>';
+			            row += '<td><input class="inventory" value="' + this.inventory + '"/></td>';
+			            row += '<td><input class="warnNumber"value="' + this.warnNumber + '"/></td>';
+			            row += '<td ><img class="logo" resourceId="' + this.resourceId + '" style="width:70px;height:70px;" src="' + this.resourceAccessUrl + '"/><a class="btn btn-link openResourcesDialog" href="javascript:void(0);">选择展示图</a></td>';
+						row += "</tr>";
+						row = $(row).appendTo($("#spacesTable tbody"));
+						
+						$(".openResourcesDialog").off("click");
+						$(".openResourcesDialog").on("click", $(".openResourcesDialog:last"), function (){
+							
+							var td = $(this).parent();
+							
+							$('#chooseResourcesDialog').modal();
+							
+							$("#btnChooseResources").off("click");
+							
+							$("#btnChooseResources").on("click", function(){
+								$.each($(".check-resources"), function(){
+									if($(this).is(":checked")){
+										var resourceId = $(this).parent().parent().attr("data-id");
+										var accessUrl = $(this).parent().parent().attr("access-url");
+										
+										td.find(".logo").attr("src", accessUrl);
+										td.find(".logo").attr("resourceId", resourceId);
+										
+										$('#chooseResourcesDialog').modal("hide");
+									}
+								});
+							});
+						});
+				});
+			}
+			//序列化商品参数
+			if(r.data.goodsParams != null && r.data.goodsParams.length > 0){
+				$("#paramsTable tbody").children().remove();
+				$.each(r.data.goodsParams, function(){
+					var row = '<tr><td widtd="163px"><a href="javascript:void(0);" onclick="removeParams($(this));">[-]</a></td>'
+						row += '<td style="display: none"><input class="id" value="' + this.id + '"/></td>';
+			            row += '<td style="display: none"><input class="goodsId" value="' + this.goodsId + '"/></td>';
+			            row += '<td><input class="paramName" value="' + this.paramName + '"/></td>';
+			            row += '<td><input class="paramValue"value="' + this.paramValue + '"/></td></tr>';
+			            $("#paramsTable tbody").append(row);
+				});
+			}
+			//序列化商品图片
+			if(r.data.goodsGallery != null && r.data.goodsGallery.length > 0){
+				$.each(r.data.goodsGallery, function(i){
+					var data = this;
+					
+					$.each($("#ulGoodsGallery li"), function(){
+						if($(this).index() == i){
+							$(this).attr("data-id", data.id);
+							$(this).attr("goodsId", data.goodsId);
+							$(this).find(".logo").attr("resourceId", data.resourceId);
+							$(this).find(".logo").attr("src", data.resourceAccessUrl);
+						}
+					})
+				})
+			}
+			
+			$("#dialog").modal('show');
+		} else {
+			console.log(r.error);
+			alert(r.message);
+		}
+	})
+}
+
+/**
+ * 商品置顶(加入推荐商品)
+ */
+function doUpGoods(e){
+	var id = e.parent().parent().parent().find(".id").html();
+	var sellerId = $("#sellerId").val();
+	$.post("mt/mtRecommendsData/doTopGoods",{"id":id,"sellerId":sellerId},function(r){
+		if(r.success){
+			alert("置顶成功");
+		}else{
+		    alert("置顶失败");
+		}
+	});
+	
+}
+</script>
+<jsp:include page="./editor.jsp"></jsp:include>
+</body>
+</html>

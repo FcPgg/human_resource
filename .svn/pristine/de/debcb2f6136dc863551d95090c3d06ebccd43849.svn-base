@@ -1,0 +1,470 @@
+package com.xt.ptus.mt.service.impl;
+
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Property;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.constants.Constants;
+import com.xt.ptus.mt.dao.MtGoodsDao;
+import com.xt.ptus.mt.dao.MtGoodsValuationDao;
+import com.xt.ptus.mt.dao.MtMaterialResourcesDao;
+import com.xt.ptus.mt.dao.MtOrderInfoDao;
+import com.xt.ptus.mt.dao.MtSellerAccountTradeLogDao;
+import com.xt.ptus.mt.dao.MtSellerDao;
+import com.xt.ptus.mt.dao.MtSellerGalleryDao;
+import com.xt.ptus.mt.dao.MtUserBrowseLogDao;
+import com.xt.ptus.mt.dao.MtUserInfoDao;
+import com.xt.ptus.mt.entity.MtGoods;
+import com.xt.ptus.mt.entity.MtGoodsValuation;
+import com.xt.ptus.mt.entity.MtOrderGoods;
+import com.xt.ptus.mt.entity.MtOrderInfo;
+import com.xt.ptus.mt.entity.MtSeller;
+import com.xt.ptus.mt.entity.MtSellerAccountTradeLog;
+import com.xt.ptus.mt.entity.MtSellerGallery;
+import com.xt.ptus.mt.entity.MtUserBrowseLog;
+import com.xt.ptus.mt.entity.MtUserInfo;
+import com.xt.ptus.mt.pojo.MtSellerPojo;
+import com.xt.ptus.mt.service.MtSellerService;
+import com.xt.ptus.obejcts.Pagination;
+import com.xt.ptus.util.DistanceUtil;
+import com.xt.ptus.util.MD5Util;
+import com.xt.ptus.util.PinyinUtil;
+import com.xt.ptus.util.StringUtil;
+
+@Service
+public class MtSellerServiceImpl extends BaseServiceImpl<MtSeller> implements MtSellerService {
+
+	@Autowired
+	private MtGoodsDao goodsDao;
+
+	@Autowired
+	private MtSellerDao sellerDao;
+
+	@Autowired
+	private MtUserInfoDao userDao;
+
+	@Autowired
+	private MtMaterialResourcesDao materialResourcesDao;
+
+	@Autowired
+	private MtSellerGalleryDao sellerGalleryDao;
+
+	@Autowired
+	private MtUserBrowseLogDao userBrowseLogDao;
+
+	@Autowired
+	private MtOrderInfoDao orderInfoDao;
+
+	@Autowired
+	private MtGoodsValuationDao goodsValuationDao;
+
+	@Autowired
+	private MtSellerAccountTradeLogDao accountTradeLogDao;
+
+	@Autowired
+	private MtGoodsValuationDao goodsVDao;
+	
+	//简单商家数据
+	private static final String SELLER_DATA_FORMAT_SIMPLE = "simple";
+	
+	//复杂商家数据
+	private static final String SELLER_DATA_FORMAT_COMPLEX = "complex";
+
+	@Override
+	public Pagination<MtSeller> getSellerByCategoryId(int categoryId, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtSeller.class).add(Property.forName("categoryId").eq(categoryId));
+		return this.getWithPagination(dc, page, rows, "id");
+	}
+
+	private void pojoParser(MtSellerPojo pojo, MtSeller seller, double lng, double lat, String format) {
+
+		// 配送时间
+		int deliveryTime = 0;
+		// 距离
+		DecimalFormat df = new DecimalFormat("0.00");
+		double distance = DistanceUtil.getDistance(Double.valueOf(seller.getLng()), Double.valueOf(seller.getLat()), lng, lat) / 1000;
+		pojo.setDistance(Double.valueOf(df.format(distance)));
+		
+
+		if(SELLER_DATA_FORMAT_COMPLEX.equals(format)){
+			// 获取商家销售总量
+			int saleCount = orderInfoDao.getSellerSaleCount(seller.getId());
+			pojo.setSellCount(saleCount);
+			
+			// 商家月销量
+			int sellerMonthSaleCount = orderInfoDao.getSellerMonthSaleCount(seller.getId());
+			pojo.setBanner(sellerGalleryDao.getGalleryBannerBySellerId(seller.getId()));
+			pojo.setGoodsCount(goodsDao.getGoodsCountBySellerId(seller.getId()));// 商品数量
+			
+			// 浏览量
+			int clickCount = userBrowseLogDao.getSellerClickCount(seller.getId());
+			pojo.setClickCount(clickCount);
+		}
+		
+		pojo.setId(seller.getId());
+		pojo.setName(seller.getName());
+		pojo.setVideo(seller.getVideo());
+		pojo.setUserId(String.valueOf(seller.getUserInfoId()));
+		pojo.setCategoryName(seller.getCatName());
+		pojo.setReviewed(Constants.REVIEWED_STATUS);
+		
+		pojo.setLat(seller.getLat());
+		pojo.setLng(seller.getLng());
+		pojo.setAddress(seller.getAddress());
+		pojo.setIndexImgUrl(seller.getLogo());
+		pojo.setCategoryName(seller.getCatName());
+		pojo.setCategoryId(seller.getCategoryId());
+		pojo.setBusinessScope(seller.getBusinessScope());
+		pojo.setDistance(Double.valueOf(df.format(distance)));
+		
+		if(!StringUtil.IsNullOrEmpty(seller.getProvince())){
+			pojo.setRegion(seller.getProvince() + "" + seller.getCity());
+		}
+
+		// 同城配送时间
+		if (distance <= 10.00) {
+			deliveryTime = (int) (distance * Constants.velocity);
+			pojo.setDeliveryTime(deliveryTime);
+		}
+
+	}
+
+	// app通过分类获取商家列表
+	@Override
+	public List<MtSellerPojo> getSellerByCategoryIdToMobile(int categoryId, int page, int rows, double lng, double lat, String distance) {
+
+		double distanceD = 0.0;
+		if(!StringUtil.IsNullOrEmpty(distance)){
+			distanceD = Double.parseDouble(distance);
+		}
+		List<MtSellerPojo> list = new ArrayList<MtSellerPojo>();
+		List<MtSeller> sellers = sellerDao.getSellerByCategoryId(categoryId, page, rows);
+		for (MtSeller seller : sellers) {
+			MtSellerPojo pojo = new MtSellerPojo();
+			pojoParser(pojo, seller, lng, lat, SELLER_DATA_FORMAT_COMPLEX);
+			
+			if(distanceD > 0){
+				if(pojo.getDistance() <= distanceD){
+					list.add(pojo);
+				}
+			} else {
+				list.add(pojo);
+			}
+		}
+		return list;
+	}
+
+	@Override
+	public MtSellerPojo getSellerInfo(String id, String userId, double lng,double lat) {
+		double score = 0;
+		double matchDescriptionScore = 0;
+		double serviceAttitudeScore = 0;
+		double streamServiceScore = 0;
+		int valuationCount = 0;
+		DecimalFormat df = new DecimalFormat("0.0");
+		MtSellerPojo pojo = new MtSellerPojo();
+
+		MtSeller seller = sellerDao.get(id, MtSeller.class);
+		if (seller == null) {
+			return null;
+		}
+
+		Session session = getCurrentSession();
+		DetachedCriteria inGoodsIdCriteria = DetachedCriteria.forClass(MtGoods.class);
+		inGoodsIdCriteria.setProjection(Property.forName("id"));
+		inGoodsIdCriteria.add(Property.forName("sellerId").eq(Integer.parseInt(id)));
+
+		// 获取描述评分总和
+		Criteria matchCri = session.createCriteria(MtGoodsValuation.class);
+		matchCri.add(Property.forName("goodsId").in(inGoodsIdCriteria));
+		matchCri.setProjection(Projections.sum("matchDescription"));
+		
+		if(matchCri.uniqueResult() != null){
+			matchDescriptionScore = Integer.parseInt(matchCri.uniqueResult().toString());
+			
+			// 评论总数
+			Criteria valuationCountCri = session.createCriteria(MtGoodsValuation.class);
+			valuationCountCri.add(Property.forName("goodsId").in(inGoodsIdCriteria));
+			valuationCountCri.setProjection(Projections.rowCount());
+			valuationCount = Integer.parseInt(valuationCountCri.uniqueResult().toString());
+	
+			// 获取服务评分总和
+			Criteria serviceCri = session.createCriteria(MtGoodsValuation.class);
+			serviceCri.add(Property.forName("goodsId").in(inGoodsIdCriteria));
+			serviceCri.setProjection(Projections.sum("serviceAttitude"));
+			serviceAttitudeScore = Integer.parseInt(serviceCri.uniqueResult().toString());
+	
+			// 物流评分总和
+			Criteria streamCri = session.createCriteria(MtGoodsValuation.class);
+			streamCri.add(Property.forName("goodsId").in(inGoodsIdCriteria));
+			streamCri.setProjection(Projections.sum("streamService"));
+			streamServiceScore = Integer.parseInt(streamCri.uniqueResult().toString());
+	
+			// 商家描述评分
+			matchDescriptionScore = 5 - (valuationCount * 5 - matchDescriptionScore) / valuationCount;
+			// 商家服务评分
+			serviceAttitudeScore = 5 - (valuationCount * 5 - serviceAttitudeScore) / valuationCount;
+			// 物流评分
+			streamServiceScore = 5 - (valuationCount * 5 - streamServiceScore) / valuationCount;
+			// 商家总评分
+			score = Double.valueOf(df.format((matchDescriptionScore + serviceAttitudeScore + streamServiceScore) / 3));
+
+		} else {
+			// 如果没有评分，就给默认评分3.0
+			score = 3.0;
+			matchDescriptionScore = 3.0;
+			serviceAttitudeScore = 3.0;
+			streamServiceScore = 3.0;
+		}
+
+		pojo.setScore(score);
+		pojo.setMatchDescriptionScore(matchDescriptionScore);
+		pojo.setServiceAttitudeScore(serviceAttitudeScore);
+		pojo.setStreamServiceScore(streamServiceScore);
+
+		pojoParser(pojo, seller, lng, lat, SELLER_DATA_FORMAT_COMPLEX);
+
+		// 添加浏览记录
+		if (!StringUtil.IsNullOrEmpty(userId)) {
+			MtUserBrowseLog userBLog = userBrowseLogDao.getBrowseLogSeller(id, userId);
+			if(userBLog == null){
+				MtUserBrowseLog userBrowsLog = new MtUserBrowseLog();
+				userBrowsLog.setSellerId(Integer.parseInt(id));
+				userBrowsLog.setUserId(Integer.parseInt(userId));
+				userBrowsLog.setBrowseTime(new Date());
+				userBrowseLogDao.save(userBrowsLog);
+			}else{
+				userBLog.setBrowseTime(new Date());
+				userBrowseLogDao.update(userBLog);
+			}
+		}
+
+		return pojo;
+	}
+
+
+	@Override
+	public List<MtSellerPojo> listSellerInfo(double lng, double lat) {
+
+		List<MtSellerPojo> list = new ArrayList<MtSellerPojo>();
+		DecimalFormat df = new DecimalFormat("######0.00");
+		List<MtSeller> sellers = sellerDao.getAll(MtSeller.class);
+		for (MtSeller seller : sellers) {
+			MtSellerPojo pojo = new MtSellerPojo();
+
+			pojoParser(pojo, seller, lng, lat, SELLER_DATA_FORMAT_COMPLEX);
+			list.add(pojo);
+		}
+
+		return list;
+	}
+
+	/**
+	 * 通过名称查询商家避免重名
+	 */
+	@Override
+	public boolean getSellerBySellerName(String sellerName) {
+		List<MtSeller> seller = sellerDao.getSellerByName(sellerName);
+		return seller != null && seller.size() > 0;
+	}
+
+	/**
+	 * 更新商家
+	 */
+	@Override
+	public void afterUpdate(MtSeller t) {
+		// 更新商家后更新商家用户
+		if (t.getUserInfo() != null && t.getUserInfo().size() > 0) {
+			for (MtUserInfo userInfo : t.getUserInfo()) {
+				if (!StringUtil.IsNullOrEmpty(userInfo.getId()) && Integer.parseInt(userInfo.getId()) > 0) {
+					userDao.update(userInfo);
+				} else {
+					// 生成商家的同时，生成商家账号
+					String name = PinyinUtil.getInstance().getPinyinCode(t.getName());
+					userInfo.setName(name);
+					userInfo.setUserName(name);
+					userInfo.setNickName(t.getName());
+					userInfo.setPassword(MD5Util.MD5(userInfo.getPassword()));
+					userInfo.setStatus(Constants.USER_STATUS_UNLOGIN);
+					userInfo.setCategory(Constants.USER_INFO_CATEGORY_SYSTEM_USER);
+					userDao.save(userInfo);
+
+					// 生成商家后，赠送商家入驻资金
+					MtSellerAccountTradeLog accountTradeLog = new MtSellerAccountTradeLog();
+					accountTradeLog.setSellerId(Integer.parseInt(t.getId()));
+					accountTradeLog.setAmount(Constants.SELLER_ACCOUNT_REGISTER_AMOUNT);
+					accountTradeLog.setSource(Constants.SELLER_ACCOUNT_REGISTER_INFLOW);
+					accountTradeLog.setTradeTime(new Date());
+					accountTradeLog.setOperator(t.getOperator());
+					accountTradeLogDao.save(accountTradeLog);
+				}
+			}
+		}
+		// 修改商家附件
+		if (t.getSellerGallery() != null && t.getSellerGallery().size() > 0) {
+			for (MtSellerGallery sellerGallery : t.getSellerGallery()) {
+				if (!StringUtil.IsNullOrEmpty(sellerGallery.getId()) && Integer.parseInt(sellerGallery.getId()) > 0) {
+					System.out.println("adfadfasdf" + sellerGallery.getId());
+					sellerGalleryDao.update(sellerGallery);
+				} else {
+					sellerGallery.setSellerId(sellerGallery.getSellerId());
+					sellerGalleryDao.save(sellerGallery);
+				}
+			}
+
+		}
+
+	}
+
+	@Override
+	public MtSeller getComplexSeller(String id) {
+		MtSeller seller = sellerDao.get(id, MtSeller.class);
+		List<MtSellerGallery> sellerGallery = sellerGalleryDao.getGalleryBySellerId(id);
+		if (sellerGallery != null && sellerGallery.size() > 0) {
+			seller.setSellerGallery(sellerGallery);
+		}
+		return seller;
+	}
+
+	@Override
+	public List<MtSellerPojo> getSellersByIds(String[] array) {
+		return sellerDao.getSellerByIds(array);
+	}
+
+	@Override
+	public List<MtSellerPojo> getAttentedSellers(String userId, String lng, String lat) {
+		return sellerDao.getAttentedSellers(userId, lng, lat);
+	}
+
+	@Override
+	public List<MtSellerPojo> getSellerByName(String name, double lng, double lat, int page, int rows) {
+		DetachedCriteria dc = DetachedCriteria.forClass(MtSeller.class).add(Property.forName("name").like("%" + name + "%"));
+		Pagination<MtSeller> pagination = this.getWithPagination(dc, page, rows, "id");
+
+		List<MtSellerPojo> list = new ArrayList<MtSellerPojo>();
+		if (pagination.getData() != null && pagination.getData().size() > 0) {
+			for (MtSeller seller : pagination.getData()) {
+				MtSellerPojo pojo = new MtSellerPojo();
+				pojoParser(pojo, seller, lat, lng, SELLER_DATA_FORMAT_COMPLEX);
+
+				list.add(pojo);
+			}
+		}
+		return list;
+	}
+
+	/**
+	 * 获取推荐商家
+	 */
+	@Override
+	public List<MtSellerPojo> getRecommendsSellers(double lng, double lat) {
+		List<MtSeller> sellers = sellerDao.getRecommendsSellers();
+		
+		List<MtSellerPojo> pojoList = new ArrayList<MtSellerPojo>();
+		if(sellers != null && sellers.size() > 0){
+			//首页显示只显示头四条数据
+			for(int i = 0; i < (sellers.size() >= 4 ? 4 : sellers.size()); i++){
+				MtSellerPojo pojo = new MtSellerPojo();
+					pojoParser(pojo, sellers.get(i), lng, lat, SELLER_DATA_FORMAT_SIMPLE);
+					pojoList.add(pojo);
+			}
+		}
+		return pojoList;
+	}
+
+	/**
+	 * 获取商家七天销售业绩TODO
+	 * @throws ParseException 
+	 */
+	@Override
+	public List getSellerSevenDayAchievement(String id) throws Exception {
+		    double priceSum = 0; 
+		    ArrayList list = new ArrayList();
+	        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+	        Calendar lastDate = Calendar.getInstance();
+	        for(int i = 6 ; i >= 0 ; i--){
+	        	lastDate.setTime(new Date());
+		        lastDate.roll(Calendar.DATE, -i);//日期回滚7天
+		        lastDate.set(lastDate.get(Calendar.YEAR), lastDate.get(Calendar.MONTH), lastDate.get(Calendar.DAY_OF_MONTH),
+						0, 0, 0);
+		        Date beginOfDate = lastDate.getTime();
+		        lastDate.set(lastDate.get(Calendar.YEAR), lastDate.get(Calendar.MONTH), lastDate.get(Calendar.DAY_OF_MONTH),
+						23, 59, 59);
+		        Date endTime = lastDate.getTime();
+		        //获取
+		        Session session = getCurrentSession();
+				DetachedCriteria inOrderIdCriteria = DetachedCriteria.forClass(MtOrderInfo.class);
+				inOrderIdCriteria.setProjection(Property.forName("id"));
+				inOrderIdCriteria.add(Property.forName("sellerId").eq(Integer.parseInt(id)));
+				inOrderIdCriteria.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+				inOrderIdCriteria.add(Property.forName("createTime").between(beginOfDate, endTime));
+				
+				Criteria sumPrice = session.createCriteria(MtOrderGoods.class);
+				sumPrice.add(Property.forName("orderId").in(inOrderIdCriteria));
+				sumPrice.setProjection(Projections.sum("price"));
+				if(sumPrice.uniqueResult() != null){
+					priceSum = (double) sumPrice.uniqueResult();
+			 	}else{
+			 		priceSum = 0;
+				}
+				list.add(priceSum);
+	        }
+		return list;
+	}
+
+	@Override
+	public List getSellerAchievement(String id) {
+	    int saleCount = 0; 
+	    ArrayList list = new ArrayList();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar lastDate = Calendar.getInstance();
+        for(int i = 29 ; i >= 0 ; i--){
+        	lastDate.setTime(new Date());
+	        lastDate.roll(Calendar.DATE, -i);//日期回滚30天
+	        lastDate.set(lastDate.get(Calendar.YEAR), lastDate.get(Calendar.MONTH), lastDate.get(Calendar.DAY_OF_MONTH),
+					0, 0, 0);
+	        Date beginOfDate = lastDate.getTime();
+	        lastDate.set(lastDate.get(Calendar.YEAR), lastDate.get(Calendar.MONTH), lastDate.get(Calendar.DAY_OF_MONTH),
+					23, 59, 59);
+	        Date endTime = lastDate.getTime();
+	        System.out.println(beginOfDate);
+	        //获取
+	        Criteria criteria = getCurrentSession().createCriteria(MtOrderInfo.class);
+	        criteria.add(Property.forName("createTime").between(beginOfDate, endTime));
+	        criteria.add(Property.forName("orderStatus").eq(Constants.ORDER_STATUS_SUCCESS));
+			criteria.setProjection(Projections.rowCount());
+			
+			if(criteria.uniqueResult() != null){
+				saleCount = Integer.parseInt(criteria.uniqueResult().toString());
+		 	}else{
+		 		saleCount = 0;
+			}
+			list.add(saleCount);
+        }
+        return list;
+	}
+
+	@Override
+	public List<MtSeller> getSellerName(String name) {
+		return sellerDao.getSellerName(name);
+	}
+
+	@Override
+	public List<MtSeller> getMySellersByUserInfoId(String userId) {
+		return sellerDao.getMySellersByUserInfoId(userId);
+	}
+
+}

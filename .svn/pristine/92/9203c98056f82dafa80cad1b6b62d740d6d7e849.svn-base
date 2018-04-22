@@ -1,0 +1,93 @@
+package com.xt.ptus.mt.controller.mobile;
+
+import javax.annotation.Resource;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.xt.ptus.mt.entity.MtUserAttention;
+import com.xt.ptus.mt.service.MtUserAttentionService;
+import com.xt.ptus.obejcts.Result;
+
+@Controller
+@RequestMapping("/mt/mobile/mtUserAttention/")
+public class MtUserAttentionControllerMobile {
+	
+	private static Logger logger = Logger.getLogger(MtUserAttentionControllerMobile.class);
+	
+	@Resource
+	private MtUserAttentionService service;
+	
+	@ResponseBody
+	@RequestMapping("addUserAttention")
+	public Result addUserAttention(MtUserAttention userAttention){
+		Result result = new Result();
+
+		try {
+			MtUserAttention attention = service.getUserAttention(String.valueOf(userAttention.getUserId()), String.valueOf(userAttention.getAttentionId()), String.valueOf(userAttention.getCategory()));
+			if(attention == null){
+				service.update(userAttention);
+				result.setData(userAttention);
+			} else {
+				result.setData(attention);
+			}
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 检查用户是否已经关注
+	 * @param userId
+	 * @param attentionId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("checkUserAttention")
+	public Result checkUserAttention(@RequestParam("userId") String userId, @RequestParam("attentionId") String attentionId, @RequestParam("category") String category){
+		Result result = new Result();
+
+		try {
+			MtUserAttention attention = service.getUserAttention(userId, attentionId, category);
+			result.setData(attention);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+	
+	/**
+	 * 取消关注
+	 * @param userId
+	 * @param attentionId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("removeUserAttention")
+	public Result removeUserAttention(@RequestParam("id") String id){
+		Result result = new Result();
+
+		try {
+			service.remove(id);
+			result.setSuccess(true);
+		} catch (Exception e) {
+			result.setSuccess(false);
+			result.setError(e.getMessage());
+			result.setMessage("操作失败");
+			logger.error(e);
+		}
+		return result;
+	}
+}

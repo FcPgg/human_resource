@@ -1,0 +1,12 @@
+package  com.xt.ptus.mt.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.xt.ptus.base.impl.BaseServiceImpl;
+import com.xt.ptus.mt.entity.MtTaskParams;
+import com.xt.ptus.mt.service.MtTaskParamsService;
+
+@Service
+public class MtTaskParamsServiceImpl extends BaseServiceImpl<MtTaskParams> implements MtTaskParamsService{
+
+}

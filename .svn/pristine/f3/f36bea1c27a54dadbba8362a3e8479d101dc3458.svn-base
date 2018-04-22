@@ -1,0 +1,14 @@
+package com.xt.ptus.mt.dao;
+
+import java.util.List;
+
+import com.xt.ptus.base.BaseDao;
+import com.xt.ptus.mt.entity.MtUserSignInLog;
+
+public interface MtUserSignInLogDao extends BaseDao<MtUserSignInLog>{
+
+	MtUserSignInLog getLastSignInLog(String userId);
+
+	List<MtUserSignInLog> getUserSignInLog(String userId);
+
+}
