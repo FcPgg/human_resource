@@ -162,10 +162,9 @@ public class MtGoodsDaoImpl extends BaseDaoImpl<MtGoods> implements MtGoodsDao {
 	}
 
 	@Override
-	public List<MtGoods> getGoodsBySellerId(String sellerId) {
+	public MtGoods getArchivesInfoById(int id) {
 		Criteria criteria = getCurrentSession().createCriteria(MtGoods.class);
-		criteria.add(Property.forName("sellerId").eq(Integer.parseInt(sellerId)));
-		criteria.add(Property.forName("status").eq(Constants.GOODS_STATUS_NORMAL));
-		return criteria.list();
+		criteria.add(Property.forName("id").eq(String.valueOf(id)));
+		return (MtGoods) criteria.uniqueResult();
 	}
 }

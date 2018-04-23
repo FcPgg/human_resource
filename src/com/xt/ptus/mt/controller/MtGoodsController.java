@@ -53,21 +53,6 @@ public class MtGoodsController extends BaseController<MtGoods> {
 			
 			DetachedCriteria dc = DetachedCriteria.forClass(MtGoods.class);
 			
-//			if(params.containsKey("name")){
-//				dc.add(Property.forName("name").like("%" + params.get("name") + "%"));
-//			}
-//			
-//			if(params.containsKey("status")){
-//				dc.add(Property.forName("status").eq(Integer.parseInt(params.get("status").toString())));
-//			}
-//			
-//			if(params.containsKey("secondLevelCategory")){
-//				dc.add(Property.forName("secondLevelCategory").eq(Integer.parseInt(params.get("secondLevelCategory").toString())));
-//			}
-//			if(params.containsKey("sellerId")){
-//				dc.add(Property.forName("sellerId").eq(Integer.parseInt(params.get("sellerId").toString())));
-//			}
-			
 			dc.addOrder(Order.asc("status"));
 			
 			result.setData(service.getWithPagination(dc, page, rows, "id"));
@@ -82,12 +67,12 @@ public class MtGoodsController extends BaseController<MtGoods> {
 	}
 	
 	@ResponseBody
-	@RequestMapping("getGoodsBySellerId")
-	public Result getGoodsBySellerId(@RequestParam("sellerId") String sellerId){
+	@RequestMapping("getArchivesInfoById")
+	public Result getArchivesInfoById(@RequestParam("id") int id){
 		Result result = new Result();
 
 		try {
-			result.setData(service.getGoodsBySellerId(sellerId));
+			result.setData(service.getArchivesInfoById(id));
 			result.setSuccess(true);
 		} catch (Exception e) {
 			result.setSuccess(false);

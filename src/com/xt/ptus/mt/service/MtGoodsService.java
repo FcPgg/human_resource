@@ -13,8 +13,6 @@ public interface MtGoodsService extends BaseService<MtGoods>{
 
 	public void undercarriageGoods(String id, int undercarriageor);
 
-	public List<MtGoods> getGoodsBySellerId(String sellerId);
-
 	public Pagination<MtGoods> getGoodsBySellerId(String sellerId, int page, int ros);
 
 	public List<MtGoodsPojo> getGoodsByIds(MtOrderGoodsParam[] array);
@@ -26,6 +24,8 @@ public interface MtGoodsService extends BaseService<MtGoods>{
 	public List<MtGoods> getGoodsName(String name);
 	
 	public MtGoods getComplexGoods(String id , String userId);
+
+	public MtGoods getArchivesInfoById(int id);
 
 
 }

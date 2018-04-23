@@ -149,8 +149,8 @@ public class MtGoodsServiceImpl extends BaseServiceImpl<MtGoods> implements MtGo
 	}
 
 	@Override
-	public List<MtGoods> getGoodsBySellerId(String sellerId) {
-		return goodsDao.getGoodsBySellerId(sellerId);
+	public MtGoods getArchivesInfoById(int id) {
+		return goodsDao.getArchivesInfoById(id);
 	}
 	
 }

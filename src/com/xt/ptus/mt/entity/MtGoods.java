@@ -78,6 +78,21 @@ public class MtGoods extends BaseEntity {
 	@Column(name = "cashback", columnDefinition = "decimal(18,2)")
 	private double cashback;
 	
+	@Column(name = "idNumber", columnDefinition = "varchar(20)")
+	private String idNumber;
+	
+	@Column(name = "telPhone", columnDefinition = "varchar(20)")
+	private String telPhone;
+
+	@Column(name = "school", columnDefinition = "varchar(100)")
+	private String school;
+	
+	@Column(name = "major", columnDefinition = "varchar(50)")
+	private String major;
+	
+	@Column(name = "sex", columnDefinition = "int(10)")
+	private String sex;
+	
 	@Column(name = "detail_description", columnDefinition = "varchar(1000)")
 	private String detailDescription;
 	
@@ -378,6 +393,47 @@ public class MtGoods extends BaseEntity {
 	public void setCatName(String catName) {
 		this.catName = catName;
 	}
+
+	public String getIdNumber() {
+		return idNumber;
+	}
+
+	public void setIdNumber(String idNumber) {
+		this.idNumber = idNumber;
+	}
+
+	public String getTelPhone() {
+		return telPhone;
+	}
+
+	public void setTelPhone(String telPhone) {
+		this.telPhone = telPhone;
+	}
+
+	public String getSchool() {
+		return school;
+	}
+
+	public void setSchool(String school) {
+		this.school = school;
+	}
+
+	public String getMajor() {
+		return major;
+	}
+
+	public void setMajor(String major) {
+		this.major = major;
+	}
+
+	public String getSex() {
+		return sex;
+	}
+
+	public void setSex(String sex) {
+		this.sex = sex;
+	}
+	
 	
 	
 }

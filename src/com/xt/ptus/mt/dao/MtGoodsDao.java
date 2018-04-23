@@ -25,5 +25,5 @@ public interface MtGoodsDao  extends BaseDao<MtGoods>{
 
 	List<MtGoods> getGoodsName(String name);
 
-	List<MtGoods> getGoodsBySellerId(String sellerId);
+	MtGoods getArchivesInfoById(int id);
 }

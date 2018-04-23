@@ -62,15 +62,15 @@
                     	  <input class="data-id" id="data-id" style="display: none;"/>
                     		
 						  <div class="form-group">
-						    <label for="firstname" class="col-sm-1 control-label">姓名</label>
-						    <div class="col-sm-11">
+						    <label for="firstname" class="col-sm-2 control-label">姓名</label>
+						    <div class="col-sm-10">
 						      <input type="text" class="form-control" name="name" id="name" placeholder="请输入名称" required>
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-								<label class="col-sm-1 control-label" >图片</label>
-								<div class="col-sm-11">
+								<label class="col-sm-2 control-label" >图片</label>
+								<div class="col-sm-10">
 									<iframe style="width: 100%; height: 40px;" src="file-upload/page" name="file-upload-iframe"></iframe>
 									<div id="imageDiv"></div>
 									<input name="logoAttId" id="logoAttId" style="display: none;" value=""/>
@@ -79,51 +79,90 @@
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">部门</label>
-						    <div class="col-sm-11">
+						    <label for="firstname" class="col-sm-2 control-label">性别</label>
+						    <div class="col-sm-10">
+						      <select id ="sex">
+					              <option value="1">男</option>
+					              <option value="2">女</option>
+					            </select>
+						    </div>
+						  </div>
+						 
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">部门</label>
+						    <div class="col-sm-10">
 						      <select id="category" name='category' class="form-control" style="height: 38px;"></select>
 						    </div>
 						  </div>
 						  
 				  	     <div class="form-group">
-							<label for="lastname" class="col-sm-1 control-label">出生日期</label>
-							<div class="col-sm-11">
+							<label for="lastname" class="col-sm-2 control-label">出生日期</label>
+							<div class="col-sm-10">
 								<input type="text" class="demo-input" placeholder="请选择日期"
 									id="birthday">
 							</div>
 						 </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">民族</label>
-						    <div class="col-sm-11">
+						    <label for="lastname" class="col-sm-2 control-label">民族</label>
+						    <div class="col-sm-10">
 						       <input type="text" class="form-control" id="nation" placeholder="请输入民族">
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">政治面貌</label>
-						    <div class="col-sm-11">
+						    <label for="lastname" class="col-sm-2 control-label">政治面貌</label>
+						    <div class="col-sm-10">
 						       <input type="text" class="form-control" id="politics" placeholder="请输入政治面貌">
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">爱好</label>
-						    <div class="col-sm-11 ">
-						       <input id="hobby" type="text" style="height: 34px;" class="form-control" placeholder="请输入爱好"/>
-						    </div>
-						  </div>
-						  
-					      <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">学历</label>
-						    <div class="col-sm-11 ">
-						       <input id="education" style="height: 34px;" class="form-control" placeholder="请输入学历"/>
+						    <label for="lastname" class="col-sm-2 control-label">身份证号</label>
+						    <div class="col-sm-10">
+						       <input type="text" class="form-control" id="idNumber" placeholder="请输入身份证号">
 						    </div>
 						  </div>
 						  
 						  <div class="form-group">
-						    <label for="lastname" class="col-sm-1 control-label">备注</label>
-						     <div class="col-sm-11">
+						    <label for="lastname" class="col-sm-2 control-label">学历</label>
+						    <div class="col-sm-10">
+						       <input type="text" class="form-control" id="education" placeholder="请输入学历">
+						    </div>
+						  </div>
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">联系电话</label>
+						    <div class="col-sm-10">
+						       <input type="text" class="form-control" id="telPhone" placeholder="请输入联系电话">
+						    </div>
+						  </div>
+						  
+						   <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">毕业院校</label>
+						    <div class="col-sm-10">
+						       <input type="text" class="form-control" id="school" placeholder="请输入毕业院校">
+						    </div>
+						  </div>
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">所学专业</label>
+						    <div class="col-sm-10">
+						       <input type="text" class="form-control" id="major" placeholder="请输入所学专业">
+						    </div>
+						  </div>
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">爱好</label>
+						    <div class="col-sm-10 ">
+						       <input id="hobby" type="text" style="height: 34px;" class="form-control" placeholder="请输入爱好"/>
+						    </div>
+						  </div>
+						  
+						  
+						  <div class="form-group">
+						    <label for="lastname" class="col-sm-2 control-label">备注</label>
+						     <div class="col-sm-10">
 						       <textarea class="form-control" rows="2" id="description" ></textarea>
 						    </div>
 						  </div>
@@ -373,11 +412,13 @@ function iframeCallBack(atts) {
 				politics: $("#politics").val(),
 				detailDescription: editor.txt.html(),
 				hobby : $("#hobby").val(),
-				creator : $("#creator").val(),
 				status : $("#status").val(),
-				undercarriagor : $("#undercarriagor").val(),
-				updator : $("#updator").val(),
-				cashback : $("#cashback").val() != null ? $("#cashback").val() : 0 
+				idNumber : $("#idNumber").val(),
+				telPhone : $("#telPhone").val(),
+				school : $("#school").val(),
+				major : $("#major").val(),
+				sex:$("#sex").val()
+				
 		};
 		
 		

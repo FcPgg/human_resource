@@ -15,9 +15,9 @@
 			  	<form class="form-horizontal" role="form">
                     <fieldset>
                        <div class="form-group">
-                          <label class="col-sm-1 control-label" for="ds_host">名称</label>
+                          <label class="col-sm-1 control-label" for="ds_host">姓名</label>
                           <div class="col-sm-2">
-                             <input class="form-control" id="goodsName" type="text" placeholder="商品名称"/>
+                             <input class="form-control" id="goodsName" type="text" placeholder="请输入姓名"/>
                           </div>
                           <label class="col-sm-1 control-label" for="ds_name">分类</label>
                           <div class="col-sm-2">
@@ -39,11 +39,10 @@
                     </fieldset>     
                   </form>
 			  	<hr/>
-		          <table class="am-table am-table-bordered am-table-radius am-table-striped table-condensed  table-striped">
+		          <table class="am-table am-table-bordered am-table-radius am-table-striped table-condensed  table-striped am-table-centered">
 		            <thead >
 		              <tr class="am-default" id="goods-table-head">
-		                <th class="id" style="display: none">编号</th>
-		                <th class="category" style="display: none">二级分类编号</th>
+		                <th class="id"  style="display: none">编号</th>
 		                <th class="catName">部门</th>
 		                <th class="name">姓名</th>
 		                <th class="logoAttUrl">照片</th>
@@ -206,7 +205,8 @@ function createGoodsList(d){
 	 		}
 	 	});
 	 	tr += '<td><div class="am-btn-group am-btn-group-xs">';
-	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="修改商品" onclick="doEditGoods($(this));"><span class="am-icon-pencil-square-o"></span></button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="查看档案" onclick="doGetInfo($(this));"><span class="am-icon-pencil-square-o"></span></button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="修改档案" onclick="doEditGoods($(this));"><span class="am-icon-pencil-square-o"></span></button>';
 	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-danger am-round" title="下架" onclick="doUndercarriage($(this));"><span class="am-icon-trash-o" ></span></button>';
 	 	tr += '</div></td>';
 	 	tr += "</tr>";
@@ -215,10 +215,36 @@ function createGoodsList(d){
 }
 
 /**
- * 查看商品详情
+ * 查看档案详情
  */
-function checkGoodById(id){
-	
+function doGetInfo(e){
+	var id = e.parent().parent().parent().find(".id").html();
+	data = {
+			id: id
+		}
+	 	$.post("mt/mtGoods/getArchivesInfoById", data, function (r) {
+			if (r.success) {
+				if (r.data) {
+					$("#id").val(r.data.id);
+					$("#userName").text(r.data.name);
+					$("#sexs").text(r.data.sex == "1" ? '男':'女' );
+					$("#birthdays").text(r.data.birthday);
+					$("#catName").text(r.data.catName);
+					$("#nations").text(r.data.nation);
+					$("#politicss").text(r.data.politics);
+					$("#idNumbers").text(r.data.idNumber);
+					$("#educationss").text(r.data.education);
+					$("#telPhones").text(r.data.telPhone);
+					$("#schools").text(r.data.school);
+					$("#majors").text(r.data.major);
+					$("#hobbys").text(r.data.hobby);
+					$("#detailDescriptions").text(r.data.detailDescription);
+					$("#descriptions").append(r.data.description);
+					$("#imgs").attr("src","showImage?uuid="+r.data.logoAttUrl);
+				}
+			}
+		});
+		$("#archivesInfo").modal('show');
 }
 
 /**
@@ -383,5 +409,6 @@ function doUpGoods(e){
 }
 </script>
 <jsp:include page="./editor.jsp"></jsp:include>
+<jsp:include page="./info.jsp"></jsp:include>
 </body>
 </html>
