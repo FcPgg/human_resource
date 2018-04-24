@@ -53,8 +53,6 @@ public class MtGoodsController extends BaseController<MtGoods> {
 			
 			DetachedCriteria dc = DetachedCriteria.forClass(MtGoods.class);
 			
-			dc.addOrder(Order.asc("status"));
-			
 			result.setData(service.getWithPagination(dc, page, rows, "id"));
 			result.setSuccess(true);
 		} catch (Exception e) {

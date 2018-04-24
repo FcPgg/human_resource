@@ -128,30 +128,3 @@
 	</div><!-- /.modal -->
 </div>
 
-<script>
-
-function delivery(){
-	 var experss = $("#experss").val();
-	 var trackingNo = $("#trackingsNo").val();
-	 var id = $("#orderId").val();
-	 if(trackingNo != '' && experss != ''){
-		 data = {'orderId':id,
-				 'streamCompanyNo':experss,
-				 'trackingNo':trackingNo,
-				 'userId':$("#currentUserId").val()
-				 }
-	 	 $.post("mt/mtOrderInfo/streamStatusUpdata",data,function(r){
-	 		 if(r.success){
-	 			 alert("发货成功！");
-	 			window.location = window.location;
-	 		 }
-	 	})
-	 }else{
-		 alert("请填写快递公司和快递单号！")
-	 }
-}
-
-
-
-
-</script>
