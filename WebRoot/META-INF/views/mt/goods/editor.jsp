@@ -412,7 +412,6 @@ function iframeCallBack(atts) {
 				politics: $("#politics").val(),
 				detailDescription: editor.txt.html(),
 				hobby : $("#hobby").val(),
-				status : $("#status").val(),
 				idNumber : $("#idNumber").val(),
 				telPhone : $("#telPhone").val(),
 				school : $("#school").val(),

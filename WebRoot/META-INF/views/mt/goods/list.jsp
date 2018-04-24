@@ -7,7 +7,6 @@
 	<%@ include file="../../common.jsp"%>
 </head>
 <body>
-       <input id="sellerId" style="display: none;" value="<%= currentUser != null ? currentUser.getSellerId() : null%>"/>
 		<div class=" admin-content">     
 			<div class="am-panel am-panel-default">
 			  <div class="am-panel-hd" style="height: 40px;">员工档案<button class="btn btn-primary btn-app btn-xs pull-right" style="margin-top: -5px;" data-toggle="modal" onclick="doAddGoods();">添加档案</button></div>
@@ -187,7 +186,7 @@ function loadData(page){
 	});
 }
 
-//构建商品列表
+//构建档案列表
 function createGoodsList(d){
 	 $.each(d, function(){
 		var tr = "<tr>"
@@ -205,9 +204,9 @@ function createGoodsList(d){
 	 		}
 	 	});
 	 	tr += '<td><div class="am-btn-group am-btn-group-xs">';
-	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="查看档案" onclick="doGetInfo($(this));"><span class="am-icon-pencil-square-o"></span></button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="查看档案" onclick="doGetInfo($(this));"><span class="icon-file-alt"></span></button>';
 	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-secondary am-round" title="修改档案" onclick="doEditGoods($(this));"><span class="am-icon-pencil-square-o"></span></button>';
-	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-danger am-round" title="下架" onclick="doUndercarriage($(this));"><span class="am-icon-trash-o" ></span></button>';
+	 	tr += '<button class="am-btn am-btn-default am-btn-xs am-text-danger am-round" title="删除档案" onclick="delArchives($(this));"><span class="am-icon-trash-o" ></span></button>';
 	 	tr += '</div></td>';
 	 	tr += "</tr>";
 			$("#goodsList").append(tr);
@@ -248,7 +247,7 @@ function doGetInfo(e){
 }
 
 /**
- * 添加商品
+ * 添加档案
  */
  var i = 0;
 function doAddGoods(){
@@ -257,131 +256,38 @@ function doAddGoods(){
 	EditorFactory.getInstance();
 }
 
-/**
- * 下架商品
- */
-function doUndercarriage(e){
-	var id = e.parent().parent().parent().find(".id").html();
-	if( id && confirm("确定执行下架操作吗？此操作不可还原")){
-		$.post("mt/mtGoods/doUndercarriage",{id: id}, function(r){
-			if(r.success){
-				window.location = window.location;
-			} else {
-				alert(r.message);
-				console.log(r.error);
-			}
-		});
-	}
-}
  
 /**
  * 修改
  */
 function doEditGoods(e){
 	var id = e.parent().parent().parent().find(".id").html();
-	$.post("mt/mtGoods/getComplexGoods",{id:id}, function(r){
+	$.post("mt/mtGoods/getArchivesInfoById",{id:id}, function(r){
 		if(r.success){
 			$("#data-id").val(r.data.id);
+			$("#category").find("option[value=" + r.data.categroy +"]").attr("selected",true);
 			$("#name").val(r.data.name);
-			$("#category").find("option[value=" + r.data.secondLevelCategory +"]").attr("selected",true);
-			$("#vender").val(r.data.vender);
-			$("#address").val(r.data.address);
+			$("#sex").find("option[value=" + r.data.sex +"]").attr("selected",true);
+			$("#birthday").val(r.data.birthday);
+			$("#nation").val(r.data.nation);
+			$("#politics").val(r.data.politics);
+			$("#idNumber").val(r.data.idNumber);
+			$("#education").val(r.data.education);
+			$("#telPhone").val(r.data.telPhone);
+			$("#school").val(r.data.school);
+			$("#major").val(r.data.major);
+			$("#hobby").val(r.data.hobby);
 			$("#description").val(r.data.description);
-			$("#clickCount").val(r.data.clickCount);
-		  	$("#createTime").val(r.data.createTime);
-		  	$("#creator").val(r.data.creator);
-		  	$("#sellerId").val(r.data.sellerId);
-		  	$("#status").val(r.data.status);
-		  	$("#updateTime").val(r.data.updateTime);
-		  	$("#undercarriageTime").val(r.data.undercarriageTime);
-		  	$("#undercarriagor").val(r.data.undercarriagor);
-		  	$("#cashback").val(r.data.cashback);
-		  	$("#updator").val(r.data.updator);
-			
+			$("#logoAttId").val(r.data.attId);
+			if(r.data.logoAttUrl){
+				$("#imageDiv").children().remove();
+				$("#imageDiv").append("<img style='width:120px;height:120px;' src='showImage?uuid=" + r.data.logoAttUrl+"'><img>");
+			}
 			if(r.data.detailDescription){
 					/* editor.$txt.html(r.data.detailDescription); */
 					console.log(r.data.detailDescription);
 					var editor = EditorFactory.getInstance();
 					editor.txt.html(r.data.detailDescription);
-			}
-			$("#rate").val(r.data.rate);
-			if(r.data.postage > 0){
-				 $("#postage").attr("readOnly",false);
-				 $("#ifPostage").removeAttr("checked");
-				 $("#postage").val(r.data.postage);
-			} else {
-				$("#postage").attr("readOnly", true);
-				$("#ifPostage").attr("checked", "true"); 
-				$("#postage").val(0);
-			}
-			
-			//序列化规格
-			if(r.data.goodsSpecs != null && r.data.goodsSpecs.length > 0){
-				$("#spacesTable tbody").children().remove();
-				$.each(r.data.goodsSpecs, function(){
-					var row = "<tr>"
-			            row += '<td><a href="javascript:void(0);" onclick="removeSpaces($(this))">[-]删除 </a></div></td>';
-						row += '<td style="display: none"><input class="id" value="' + this.id + '"/></td>';
-			            row += '<td style="display: none"><input class="goodsId" value="' + this.goodsId + '"/></td>';
-			            row += '<td><input class="description" value="' + this.description + '"/></td>';
-			            row += '<td><input class="price" value="' + this.price + '"/></td>';
-			            row += '<td><input class="inventory" value="' + this.inventory + '"/></td>';
-			            row += '<td><input class="warnNumber"value="' + this.warnNumber + '"/></td>';
-			            row += '<td ><img class="logo" resourceId="' + this.resourceId + '" style="width:70px;height:70px;" src="' + this.resourceAccessUrl + '"/><a class="btn btn-link openResourcesDialog" href="javascript:void(0);">选择展示图</a></td>';
-						row += "</tr>";
-						row = $(row).appendTo($("#spacesTable tbody"));
-						
-						$(".openResourcesDialog").off("click");
-						$(".openResourcesDialog").on("click", $(".openResourcesDialog:last"), function (){
-							
-							var td = $(this).parent();
-							
-							$('#chooseResourcesDialog').modal();
-							
-							$("#btnChooseResources").off("click");
-							
-							$("#btnChooseResources").on("click", function(){
-								$.each($(".check-resources"), function(){
-									if($(this).is(":checked")){
-										var resourceId = $(this).parent().parent().attr("data-id");
-										var accessUrl = $(this).parent().parent().attr("access-url");
-										
-										td.find(".logo").attr("src", accessUrl);
-										td.find(".logo").attr("resourceId", resourceId);
-										
-										$('#chooseResourcesDialog').modal("hide");
-									}
-								});
-							});
-						});
-				});
-			}
-			//序列化商品参数
-			if(r.data.goodsParams != null && r.data.goodsParams.length > 0){
-				$("#paramsTable tbody").children().remove();
-				$.each(r.data.goodsParams, function(){
-					var row = '<tr><td widtd="163px"><a href="javascript:void(0);" onclick="removeParams($(this));">[-]</a></td>'
-						row += '<td style="display: none"><input class="id" value="' + this.id + '"/></td>';
-			            row += '<td style="display: none"><input class="goodsId" value="' + this.goodsId + '"/></td>';
-			            row += '<td><input class="paramName" value="' + this.paramName + '"/></td>';
-			            row += '<td><input class="paramValue"value="' + this.paramValue + '"/></td></tr>';
-			            $("#paramsTable tbody").append(row);
-				});
-			}
-			//序列化商品图片
-			if(r.data.goodsGallery != null && r.data.goodsGallery.length > 0){
-				$.each(r.data.goodsGallery, function(i){
-					var data = this;
-					
-					$.each($("#ulGoodsGallery li"), function(){
-						if($(this).index() == i){
-							$(this).attr("data-id", data.id);
-							$(this).attr("goodsId", data.goodsId);
-							$(this).find(".logo").attr("resourceId", data.resourceId);
-							$(this).find(".logo").attr("src", data.resourceAccessUrl);
-						}
-					})
-				})
 			}
 			
 			$("#dialog").modal('show');
@@ -392,21 +298,20 @@ function doEditGoods(e){
 	})
 }
 
-/**
- * 商品置顶(加入推荐商品)
- */
-function doUpGoods(e){
+//删除档案
+function delArchives(e){
 	var id = e.parent().parent().parent().find(".id").html();
-	var sellerId = $("#sellerId").val();
-	$.post("mt/mtRecommendsData/doTopGoods",{"id":id,"sellerId":sellerId},function(r){
+	var data = {id : id}
+	$.post("mt/mtGoods/remove",data,function(r){
 		if(r.success){
-			alert("置顶成功");
-		}else{
-		    alert("置顶失败");
-		}
+			window.location = window.location;
+		} else {
+			console.log(r.error);
+			alert(r.message);
+		}		
 	});
-	
 }
+
 </script>
 <jsp:include page="./editor.jsp"></jsp:include>
 <jsp:include page="./info.jsp"></jsp:include>

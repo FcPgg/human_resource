@@ -32,7 +32,7 @@ public class MtGoodsController extends BaseController<MtGoods> {
 	private MtGoodsService service;
 	
 	/**
-	 * 获取正常商品数据
+	 * 获取档案列表数据
 	 */
 	@ResponseBody
 	@RequestMapping("listNormalGoods")
@@ -66,6 +66,11 @@ public class MtGoodsController extends BaseController<MtGoods> {
 		return result;
 	}
 	
+	/**
+	 * 根据id获取档案详情
+	 * @param id
+	 * @return
+	 */
 	@ResponseBody
 	@RequestMapping("getArchivesInfoById")
 	public Result getArchivesInfoById(@RequestParam("id") int id){
@@ -84,7 +89,7 @@ public class MtGoodsController extends BaseController<MtGoods> {
 	}
 	
 	/**
-	 * 更新商品数据
+	 * 更新档案数据
 	 * @param request
 	 * @return
 	 */
@@ -93,6 +98,7 @@ public class MtGoodsController extends BaseController<MtGoods> {
 	public Result updateData(HttpServletRequest request) {
 		Result result = new Result();
 		try {
+		    logger.error((MtGoods) fromJSON(request.getParameter("entity"), MtGoods.class));
 			MtGoods goods = (MtGoods) fromJSON(request.getParameter("entity"), MtGoods.class);
 			service.update(goods);
 			result.setSuccess(true);
@@ -101,51 +107,6 @@ public class MtGoodsController extends BaseController<MtGoods> {
 			result.setSuccess(false);
 			result.setMessage("操作失败");
 			result.setError(e.getMessage());
-		}
-		return result;
-	}
-	
-	/** 获取复杂商品
-	 * @param id
-	 * @param reqeust
-	 * @return
-	 */
-	@ResponseBody
-	@RequestMapping("getComplexGoods")
-	public Result getComplexGoods(@RequestParam("id") String id,@RequestParam(name = "userId", required = false) String userId ,HttpServletRequest reqeust){
-		Result result = new Result();
-		try {
-			if(StringUtil.IsNullOrEmpty(id)){
-				throw new Exception("传递参数有误!");
-			}
-			result.setData(service.getComplexGoods(id,userId));
-			result.setSuccess(true);
-		} catch (Exception e) {
-			logger.error(e);
-			result.setSuccess(false);
-			result.setMessage("操作失败");
-			result.setError(e.getMessage());
-		}
-		return result;
-	}
-	
-	/**
-	 * 下架商品
-	 * @param id
-	 * @return
-	 */
-	@ResponseBody
-	@RequestMapping("doUndercarriage")
-	public Result doUndercarriage(@RequestParam("id") String id){
-		Result result = new Result();
-		try {
-			service.undercarriageGoods(id, 1);
-			result.setSuccess(true);
-		} catch (Exception e) {
-			result.setSuccess(false);
-			result.setError(e.getMessage());
-			result.setMessage("操作失败");
-			logger.error(e);
 		}
 		return result;
 	}
